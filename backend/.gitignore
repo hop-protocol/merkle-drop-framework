@@ -3,6 +3,7 @@ node_modules
 *.zip
 *.env
 generated
+generated2
 data
 input.json
 output.json
