@@ -7,19 +7,27 @@ import simpleGit from 'simple-git'
 import { constants, Wallet, BigNumber, Contract, providers } from 'ethers'
 import { formatUnits, parseUnits } from 'ethers/lib/utils'
 import { rewardsContractAddress, tokenAddress } from './config'
-const merkleRewardsAbi = require('./abi/MerkleRewards.json')
-const tokenAbi = require('./abi/ERC20.json')
+import merkleRewardsAbi from './abi/MerkleRewards.json'
+import tokenAbi from './abi/ERC20.json'
 
-const provider = new providers.StaticJsonRpcProvider('https://goerli.rpc.authereum.com')
-
+const privateKey = process.env.PRIVATE_KEY
 const rewardsDataGitUrl = process.env.REWARDS_DATA_GIT_URL
 const rewardsDataOutputGitUrl = process.env.REWARDS_DATA_OUTPUT_GIT_URL
-const privateKey = process.env.PRIVATE_KEY
+const dataRepoPath = process.env.DATA_REPO_PATH
+const outputRepoPath = process.env.OUTPUT_REPO_PATH
+
+const provider = new providers.StaticJsonRpcProvider('https://goerli.rpc.authereum.com')
 const signer = new Wallet(privateKey, provider)
 const contract = new Contract(rewardsContractAddress, merkleRewardsAbi, signer)
 const token = new Contract(tokenAddress, tokenAbi, signer)
-const dataRepoPath = '/tmp/rewards-data'
-const outputRepoPath = '/tmp/rewards-output'
+
+if (!dataRepoPath) {
+  throw new Error('dataRepoPath required')
+}
+
+if (!outputRepoPath) {
+  throw new Error('outputRepoPath required')
+}
 
 export class Controller {
   async pullRewardsDataFromRepo () {
@@ -30,71 +38,10 @@ export class Controller {
 
     try {
       await git.clone(rewardsDataGitUrl, dataRepoPath)
-      // await git.addRemote('origin', rewardsDataGitUrl)
     } catch (err) {
     }
     await git.pull('origin', 'master')
-    // await git.add('*.json')
-    // await git.commit('Update data')
-    // await git.push('origin', 'main')
     console.log('done')
-  }
-
-  async generateRoot () {
-    /*
-    const json = fs
-      .readFileSync(path.resolve(__dirname, './data/data.json'), { encoding: 'utf-8' })
-      .split('\n')
-      .filter(x => x.length > 0)
-      .map(line => {
-        const data = JSON.parse(line)
-        const owner = data.owner
-        delete data.owner
-        return [owner, data]
-      })
-    */
-    const dataPath = path.resolve(dataRepoPath, 'data')
-    const paths = await globby(`${dataPath}/*`)
-    let data : any = {}
-    if (paths.length > 1) {
-      let maxIndex = 0
-      for (const pathname of paths) {
-        const index = Number(path.parse(pathname).name)
-        maxIndex = Math.max(maxIndex, index)
-      }
-      const info = path.parse(paths[0])
-      const file1 = `${info.dir}/${maxIndex - 1}${info.ext}`
-      const file2 = `${info.dir}/${maxIndex}${info.ext}`
-
-      const previousData = require(file1)
-      const newData = require(file2)
-      const updatedData: any = {}
-
-      for (const address in previousData) {
-        let amount = BigNumber.from(previousData[address])
-        if (newData[address]) {
-          amount = amount.add(BigNumber.from(newData[address]))
-        }
-        updatedData[address] = amount.toString()
-      }
-
-      data = updatedData
-    } else {
-      data = require(paths[0])
-    }
-
-    const json: any[] = []
-    for (const address in data) {
-      json.push([address, { balance: data[address] }])
-    }
-
-    const shardNybbles = 2
-    const outDirectory = path.resolve(outputRepoPath, 'data')
-
-    const tree = ShardedMerkleTree.build(json, shardNybbles, outDirectory)
-    const renamedDir = path.resolve(outputRepoPath, tree.getHexRoot())
-    fs.renameSync(outDirectory, renamedDir)
-    console.log(tree.getHexRoot())
   }
 
   async pushOutputToRemoteRepo () {
@@ -127,6 +74,56 @@ export class Controller {
     console.log('done')
   }
 
+  async generateRoot () {
+    /*
+    const json = fs
+      .readFileSync(path.resolve(__dirname, './data/data.json'), { encoding: 'utf-8' })
+      .split('\n')
+      .filter(x => x.length > 0)
+      .map(line => {
+        const data = JSON.parse(line)
+        const owner = data.owner
+        delete data.owner
+        return [owner, data]
+      })
+    */
+    const dataPath = path.resolve(dataRepoPath, 'data')
+    const paths = await globby(`${dataPath}/*`)
+    let data : any = {}
+    if (paths.length > 1) {
+      const updatedData: any = {}
+      for (let i = 0; i < paths.length; i++) {
+        const info = path.parse(paths[0])
+        const file = `${info.dir}/${i}${info.ext}`
+        const previousData = require(file)
+        for (const address in previousData) {
+          let amount = BigNumber.from(previousData[address])
+          if (updatedData[address]) {
+            amount = amount.add(BigNumber.from(updatedData[address]))
+          }
+          updatedData[address] = amount.toString()
+        }
+      }
+
+      data = updatedData
+    } else {
+      data = require(paths[0])
+    }
+
+    const json: any[] = []
+    for (const address in data) {
+      json.push([address, { balance: data[address] }])
+    }
+
+    const shardNybbles = 2
+    const outDirectory = path.resolve(outputRepoPath, 'data')
+
+    const tree = ShardedMerkleTree.build(json, shardNybbles, outDirectory)
+    const renamedDir = path.resolve(outputRepoPath, tree.getHexRoot())
+    fs.renameSync(outDirectory, renamedDir)
+    console.log(tree.getHexRoot())
+  }
+
   async setMerkleRoot (rootHash: string) {
     const rootJsonPath = path.resolve(outputRepoPath, rootHash, 'root.json')
     const { root, total } = require(rootJsonPath)
@@ -151,5 +148,31 @@ export class Controller {
     console.log('sent', tx.hash)
     await tx.wait()
     console.log('done')
+  }
+
+  async claim (root: string, account: string) {
+    const merkleDataPath = path.resolve(outputRepoPath, root)
+    const shardedMerkleTree = ShardedMerkleTree.fromFiles(merkleDataPath)
+    const [entry, proof] = await shardedMerkleTree.getProof(account)
+    if (!entry) {
+      throw new Error('no entry')
+    }
+    const totalAmount = BigNumber.from(entry.balance)
+
+    console.log('claim')
+    const tx = await contract.claim(account, totalAmount, proof)
+    console.log('sent', tx.hash)
+    await tx.wait()
+    console.log('done')
+  }
+
+  async getClaimed (account: string) {
+    const claimedAmount = await contract.withdrawn(account)
+    console.log('claimed', formatUnits(claimedAmount, 18))
+  }
+
+  async getContractBalance () {
+    const balance = await token.balanceOf(rewardsContractAddress)
+    console.log('total', formatUnits(balance.toString(), 18))
   }
 }

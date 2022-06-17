@@ -1,9 +1,10 @@
 node_modules
+dist
+build
 *.log
 *.zip
 *.env
 generated
-generated2
 data
 input.json
 output.json
