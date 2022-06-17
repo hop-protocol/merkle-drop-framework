@@ -54,10 +54,31 @@ export class Controller {
       })
     */
     const dataPath = path.resolve(dataRepoPath, 'data')
-    const paths = await globby(dataPath + '/*')
+    const paths = await globby(`${dataPath}/*`)
     let data : any = {}
     if (paths.length > 1) {
-      // combine
+      let maxIndex = 0
+      for (const pathname of paths) {
+        const index = Number(path.parse(pathname).name)
+        maxIndex = Math.max(maxIndex, index)
+      }
+      const info = path.parse(paths[0])
+      const file1 = `${info.dir}/${maxIndex - 1}${info.ext}`
+      const file2 = `${info.dir}/${maxIndex}${info.ext}`
+
+      const previousData = require(file1)
+      const newData = require(file2)
+      const updatedData: any = {}
+
+      for (const address in previousData) {
+        let amount = BigNumber.from(previousData[address])
+        if (newData[address]) {
+          amount = amount.add(BigNumber.from(newData[address]))
+        }
+        updatedData[address] = amount.toString()
+      }
+
+      data = updatedData
     } else {
       data = require(paths[0])
     }
@@ -106,8 +127,9 @@ export class Controller {
     console.log('done')
   }
 
-  async setMerkleRoot () {
-    const { root, total } = require('./generated2/root.json')
+  async setMerkleRoot (rootHash: string) {
+    const rootJsonPath = path.resolve(outputRepoPath, rootHash, 'root.json')
+    const { root, total } = require(rootJsonPath)
     const owner = await signer.getAddress()
     console.log(root, total)
     const totalBn = BigNumber.from(total)
