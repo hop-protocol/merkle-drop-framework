@@ -4,3 +4,5 @@ node_modules
 *.env
 generated
 data
+input.json
+output.json
