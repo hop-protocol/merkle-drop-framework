@@ -1,3 +1,6 @@
 node_modules
 *.log
 *.zip
+*.env
+generated
+data

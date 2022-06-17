@@ -38,6 +38,7 @@
     "express": "^4.17.3",
     "express-rate-limit": "^6.4.0",
     "isomorphic-fetch": "^3.0.0",
+    "keccak256": "^1.0.6",
     "merkletreejs": "^0.2.31",
     "wait": "^0.4.2"
   }
