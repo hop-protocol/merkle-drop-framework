@@ -92,10 +92,12 @@ export class Controller {
     let data : any = {}
     if (paths.length > 1) {
       const updatedData: any = {}
-      // TODO: read base name as timestamp
-      for (let i = 0; i < paths.length; i++) {
-        const info = path.parse(paths[0])
-        const file = `${info.dir}/${i}${info.ext}`
+      const filenames = paths.map((filename: string) => {
+        return Number(path.parse(filename).name)
+      }).sort((a, b) => a - b)
+      const info = path.parse(paths[0])
+      for (const filename of filenames) {
+        const file = `${info.dir}/${filename}${info.ext}`
         const previousData = require(file)
         for (const address in previousData) {
           let amount = BigNumber.from(previousData[address])
@@ -122,7 +124,10 @@ export class Controller {
     const tree = ShardedMerkleTree.build(json, shardNybbles, outDirectory)
     const renamedDir = path.resolve(outputRepoPath, tree.getHexRoot())
     fs.renameSync(outDirectory, renamedDir)
-    console.log(tree.getHexRoot())
+    const rootHash = tree.getHexRoot()
+    const latestFile = path.resolve(outputRepoPath, 'latest.json')
+    fs.writeFileSync(latestFile, JSON.stringify({root: rootHash}))
+    console.log(rootHash)
   }
 
   async setMerkleRoot (rootHash: string) {
