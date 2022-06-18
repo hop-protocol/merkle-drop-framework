@@ -8,9 +8,10 @@ import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import './App.css'
 import { Contract, BigNumber, providers, Wallet } from 'ethers'
-import { keccak256, formatEther } from 'ethers/lib/utils'
+import { keccak256, formatEther, formatUnits } from 'ethers/lib/utils'
 import merkleRewardsAbi from './abi/MerkleRewards.json'
 import { ShardedMerkleTree } from './merkle'
+import { merkleLatestRootUrl } from './config'
 
 const rpcUrl = 'https://goerli.rpc.authereum.com'
 const requiredChainId = 5
@@ -24,6 +25,9 @@ function App () {
   const [sending, setSending] = useState(false)
   const [address, setAddress] = useState('')
   const [balance, setBalance] = useState('-')
+  const [claimableAmount, setClaimableAmount] = useState('')
+  const [onchainRoot, setOnchainRoot] = useState('')
+  const [latestRoot, setLatestRoot] = useState('')
   const [wallet, setWallet] = useState(() => {
     if ((window as any).ethereum) {
       return new providers.Web3Provider((window as any).ethereum, 'any').getSigner()
@@ -69,6 +73,25 @@ function App () {
 
   useEffect(() => {
     const update = async () => {
+      if (contract) {
+        const root = await contract.merkleRoot()
+        setOnchainRoot(root)
+      }
+    }
+    update().catch(console.error)
+  }, [contract])
+
+  useEffect(() => {
+    const update = async () => {
+      const res = await fetch(merkleLatestRootUrl)
+      const json = await res.json()
+      setLatestRoot(json.root)
+    }
+    update().catch(console.error)
+  }, [contract])
+
+  useEffect(() => {
+    const update = async () => {
       setAddress('')
       if (wallet) {
         const _address = await wallet.getAddress()
@@ -77,6 +100,24 @@ function App () {
     }
     update().catch(console.error)
   }, [wallet])
+
+  useEffect(() => {
+    const update = async () => {
+      setClaimableAmount('')
+      if (claimRecipient) {
+        const shardedMerkleTree = await ShardedMerkleTree.fetchTree()
+        const [entry] = await shardedMerkleTree.getProof(claimRecipient)
+        if (!entry) {
+          return
+        }
+        const total = BigNumber.from(entry.balance)
+        const withdrawn = await contract.withdrawn(claimRecipient)
+        const amount = total.sub(withdrawn)
+        setClaimableAmount(formatUnits(amount, 18))
+      }
+    }
+    update().catch(console.error)
+  }, [contract, claimRecipient])
 
   async function checkCorrectNetwork () {
     const provider = new providers.Web3Provider((window as any).ethereum)
@@ -152,22 +193,30 @@ console.log(claimRecipient, totalAmount, proof)
         </Box>
         {!!address && (
           <Box display="flex" flexDirection="column">
-            <Box mb={4} display="flex">
+            <Box mb={2} display="flex">
               <Typography variant="body2">
                 network: {networkName}
               </Typography>
             </Box>
-            <Box mb={4} display="flex">
-              <Box mr={4}>
-                <Typography variant="body2">
-                  address: {address}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="body2">
-                  balance: <span style={{ display: 'inline-block', width: '75px' }}>{balance} ETH</span>
-                </Typography>
-              </Box>
+            <Box mb={2} display="flex">
+              <Typography variant="body2">
+                address: {address}
+              </Typography>
+            </Box>
+            <Box mb={2}>
+              <Typography variant="body2">
+                balance: <span>{balance} ETH</span>
+              </Typography>
+            </Box>
+            <Box mb={2} display="flex">
+              <Typography variant="body2">
+                onchain merkle root: {onchainRoot}
+              </Typography>
+            </Box>
+            <Box mb={2} display="flex">
+              <Typography variant="body2">
+                latest repo merkle root: {latestRoot}
+              </Typography>
             </Box>
           </Box>
         )}
@@ -185,6 +234,11 @@ console.log(claimRecipient, totalAmount, proof)
             </Box>
             <Box>
               <LoadingButton variant="contained" onClick={claim} loading={sending}>Claim</LoadingButton>
+            </Box>
+            <Box mb={2} display="flex">
+              <Typography variant="body2">
+                claimable amount: {claimableAmount}
+              </Typography>
             </Box>
           </Box>
         )}
