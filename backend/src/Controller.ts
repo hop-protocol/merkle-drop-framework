@@ -92,6 +92,7 @@ export class Controller {
     let data : any = {}
     if (paths.length > 1) {
       const updatedData: any = {}
+      // TODO: read base name as timestamp
       for (let i = 0; i < paths.length; i++) {
         const info = path.parse(paths[0])
         const file = `${info.dir}/${i}${info.ext}`
@@ -174,5 +175,10 @@ export class Controller {
   async getContractBalance () {
     const balance = await token.balanceOf(rewardsContractAddress)
     console.log('total', formatUnits(balance.toString(), 18))
+  }
+
+  async getOnchainRoot () {
+    const root = await contract.merkleRoot()
+    console.log('root', root)
   }
 }

@@ -6,5 +6,4 @@ generate root, write to dir, upload to git
 
 set root (ui)
 
-
-
+claim (ui)
