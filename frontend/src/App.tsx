@@ -28,6 +28,7 @@ function App () {
   const [claimableAmount, setClaimableAmount] = useState('')
   const [onchainRoot, setOnchainRoot] = useState('')
   const [latestRoot, setLatestRoot] = useState('')
+  const [calldata, setCalldata] = useState('')
   const [wallet, setWallet] = useState(() => {
     if ((window as any).ethereum) {
       return new providers.Web3Provider((window as any).ethereum, 'any').getSigner()
@@ -183,6 +184,32 @@ console.log(claimRecipient, totalAmount, proof)
     setSending(false)
   }
 
+  async function getCalldata() {
+    try {
+      if (!wallet) {
+        return
+      }
+      if (!provider) {
+        return
+      }
+      if (!address) {
+        return
+      }
+      if (!latestRoot) {
+        return
+      }
+      await checkCorrectNetwork()
+
+      const { root, total } = await ShardedMerkleTree.fetchRootFile()
+      const totalAmount = BigNumber.from(total)
+      const calldata = await contract.populateTransaction.setMerkleRoot(latestRoot, totalAmount)
+      setCalldata(JSON.stringify(calldata, null, 2))
+    } catch (err: any) {
+      console.error(err)
+      setError(err.message)
+    }
+  }
+
   return (
     <Box>
       <Box width="400px" p={4} m="0 auto" display="flex" flexDirection="column" justifyContent="center" alignItems="center">
@@ -232,14 +259,28 @@ console.log(claimRecipient, totalAmount, proof)
                 setClaimRecipient(event.target.value)
               }} label="Claim address" placeholder="0x..."/>
             </Box>
-            <Box>
+            <Box mb={2}>
               <LoadingButton variant="contained" onClick={claim} loading={sending}>Claim</LoadingButton>
             </Box>
-            <Box mb={2} display="flex">
-              <Typography variant="body2">
-                claimable amount: {claimableAmount}
-              </Typography>
+            {!!claimableAmount && (
+              <Box mb={2} display="flex">
+                <Typography variant="body2">
+                  claimable amount: {claimableAmount}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        )}
+        {!!address && (
+          <Box mb={4}>
+            <Box mb={2}>
+              <Button onClick={getCalldata} variant="contained">Get setMerkleRoot calldata</Button>
             </Box>
+            {!!calldata && (
+              <Box>
+                <TextField style={{ width: '500px' }} multiline value={calldata} />
+              </Box>
+            )}
           </Box>
         )}
         {!!error && (
