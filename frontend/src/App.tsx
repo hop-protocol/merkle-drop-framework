@@ -51,8 +51,12 @@ function App () {
     }
   })
   const contract = useMemo(() => {
-    if (rewardsContractAddress && (wallet || provider)) {
-      return new Contract(rewardsContractAddress, merkleRewardsAbi, wallet || provider)
+    try {
+      if (rewardsContractAddress && (wallet || provider)) {
+        return new Contract(rewardsContractAddress, merkleRewardsAbi, wallet || provider)
+      }
+    } catch (err) {
+      console.error(err)
     }
   }, [provider, wallet, rewardsContractAddress])
   useEffect(() => {
@@ -81,16 +85,20 @@ function App () {
 
   useEffect(() => {
     if (address) {
-      updateBalanceCb()
+      updateBalanceCb().catch(console.error)
     }
   }, [address, updateBalanceCb])
 
   useInterval(updateBalance, 5 * 1000)
 
   const getOnchainRoot = async () => {
-    if (contract) {
-      const root = await contract.merkleRoot()
-      setOnchainRoot(root)
+    try {
+      if (contract) {
+        const root = await contract.merkleRoot()
+        setOnchainRoot(root)
+      }
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -101,12 +109,16 @@ function App () {
   useInterval(getOnchainRoot, 5 * 1000)
 
   const getLatestRoot = async () => {
-    const res = await fetch(`${config.merkleBaseUrl}/latest.json`)
-    const json = await res.json()
-    setLatestRoot(json.root)
-    const { root, total } = await ShardedMerkleTree.fetchRootFile(json.root)
-    if (root === json.root) {
-      setLatestRootTotal(formatUnits(total, 18))
+    try {
+      const res = await fetch(`${config.merkleBaseUrl}/latest.json`)
+      const json = await res.json()
+      setLatestRoot(json.root)
+      const { root, total } = await ShardedMerkleTree.fetchRootFile(json.root)
+      if (root === json.root) {
+        setLatestRootTotal(formatUnits(total, 18))
+      }
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -116,19 +128,27 @@ function App () {
 
   useInterval(getLatestRoot, 5 * 1000)
 
-  useEffect(() => {
-    const update = async () => {
-      setAddress('')
+  const getWalletAddress = async () => {
+    try {
       if (wallet) {
         const _address = await wallet.getAddress()
         setAddress(_address)
+      } else {
+        setAddress('')
       }
+    } catch (err) {
+      console.error(err)
     }
-    update().catch(console.error)
-  }, [wallet])
+  }
 
   useEffect(() => {
-    const update = async () => {
+    getWalletAddress().catch(console.error)
+  }, [wallet])
+
+  useInterval(getWalletAddress, 5 * 1000)
+
+  const getClaimableAmount = async () => {
+    try {
       setClaimableAmount('')
       if (!onchainRoot) {
         return
@@ -147,9 +167,16 @@ function App () {
         const amount = total.sub(withdrawn)
         setClaimableAmount(formatUnits(amount, 18))
       }
+    } catch (err) {
+      console.error(err)
     }
-    update().catch(console.error)
+  }
+
+  useEffect(() => {
+    getClaimableAmount().catch(console.error)
   }, [contract, claimRecipient, onchainRoot])
+
+  useInterval(getClaimableAmount, 5 * 1000)
 
   async function checkCorrectNetwork () {
     const provider = new providers.Web3Provider((window as any).ethereum)
