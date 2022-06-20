@@ -11,12 +11,11 @@ import { Contract, BigNumber, providers, Wallet } from 'ethers'
 import { keccak256, formatEther, formatUnits } from 'ethers/lib/utils'
 import merkleRewardsAbi from './abi/MerkleRewards.json'
 import { ShardedMerkleTree } from './merkle'
-import { merkleLatestRootUrl } from './config'
+import { config } from './config'
 
 const rpcUrl = 'https://goerli.rpc.authereum.com'
 const requiredChainId = 5
 const networkName = 'goerli'
-export const rewardsContractAddress = '0xbBd7842391Bd2f8FFa6b625eEC4491b7712DA814'
 
 function App () {
   const [error, setError] = useState('')
@@ -28,8 +27,16 @@ function App () {
   const [claimableAmount, setClaimableAmount] = useState('')
   const [onchainRoot, setOnchainRoot] = useState('')
   const [latestRoot, setLatestRoot] = useState('')
+  const [latestRootTotal, setLatestRootTotal] = useState('')
   const [calldata, setCalldata] = useState('')
-  const [wallet, setWallet] = useState(() => {
+  const [rewardsContractAddress, setRewardsContractAddress] = useState(() => {
+    try {
+      return localStorage.getItem('rewardsContractAddress') || ''
+    } catch (err) {
+    }
+    return ''
+  })
+  const [wallet] = useState(() => {
     if ((window as any).ethereum) {
       return new providers.Web3Provider((window as any).ethereum, 'any').getSigner()
     }
@@ -44,8 +51,16 @@ function App () {
     }
   })
   const contract = useMemo(() => {
-    return new Contract(rewardsContractAddress, merkleRewardsAbi, wallet)
-  }, [wallet])
+    if (rewardsContractAddress && (wallet || provider)) {
+      return new Contract(rewardsContractAddress, merkleRewardsAbi, wallet || provider)
+    }
+  }, [provider, wallet, rewardsContractAddress])
+  useEffect(() => {
+    try {
+      localStorage.setItem('rewardsContractAddress', rewardsContractAddress || '')
+    } catch (err) {
+    }
+  }, [rewardsContractAddress])
 
   const updateBalance = async () => {
     try {
@@ -72,24 +87,34 @@ function App () {
 
   useInterval(updateBalance, 5 * 1000)
 
-  useEffect(() => {
-    const update = async () => {
-      if (contract) {
-        const root = await contract.merkleRoot()
-        setOnchainRoot(root)
-      }
+  const getOnchainRoot = async () => {
+    if (contract) {
+      const root = await contract.merkleRoot()
+      setOnchainRoot(root)
     }
-    update().catch(console.error)
-  }, [contract])
+  }
 
   useEffect(() => {
-    const update = async () => {
-      const res = await fetch(merkleLatestRootUrl)
-      const json = await res.json()
-      setLatestRoot(json.root)
-    }
-    update().catch(console.error)
+    getOnchainRoot().catch(console.error)
   }, [contract])
+
+  useInterval(getOnchainRoot, 5 * 1000)
+
+  const getLatestRoot = async () => {
+    const res = await fetch(`${config.merkleBaseUrl}/latest.json`)
+    const json = await res.json()
+    setLatestRoot(json.root)
+    const { root, total } = await ShardedMerkleTree.fetchRootFile(json.root)
+    if (root === json.root) {
+      setLatestRootTotal(formatUnits(total, 18))
+    }
+  }
+
+  useEffect(() => {
+    getLatestRoot().catch(console.error)
+  }, [contract])
+
+  useInterval(getLatestRoot, 5 * 1000)
 
   useEffect(() => {
     const update = async () => {
@@ -105,8 +130,14 @@ function App () {
   useEffect(() => {
     const update = async () => {
       setClaimableAmount('')
+      if (!onchainRoot) {
+        return
+      }
+      if (!contract) {
+        return
+      }
       if (claimRecipient) {
-        const shardedMerkleTree = await ShardedMerkleTree.fetchTree()
+        const shardedMerkleTree = await ShardedMerkleTree.fetchTree(onchainRoot)
         const [entry] = await shardedMerkleTree.getProof(claimRecipient)
         if (!entry) {
           return
@@ -118,7 +149,7 @@ function App () {
       }
     }
     update().catch(console.error)
-  }, [contract, claimRecipient])
+  }, [contract, claimRecipient, onchainRoot])
 
   async function checkCorrectNetwork () {
     const provider = new providers.Web3Provider((window as any).ethereum)
@@ -156,6 +187,9 @@ function App () {
       if (!wallet) {
         return
       }
+      if (!contract) {
+        return
+      }
       if (!provider) {
         return
       }
@@ -165,10 +199,13 @@ function App () {
       if (!claimRecipient) {
         return
       }
+      if (!onchainRoot) {
+        return
+      }
       setSending(true)
       await checkCorrectNetwork()
 
-      const shardedMerkleTree = await ShardedMerkleTree.fetchTree()
+      const shardedMerkleTree = await ShardedMerkleTree.fetchTree(onchainRoot)
       const [entry, proof] = await shardedMerkleTree.getProof(claimRecipient)
       if (!entry) {
         throw new Error('no entry')
@@ -186,7 +223,30 @@ console.log(claimRecipient, totalAmount, proof)
 
   async function getCalldata() {
     try {
+      if (!contract) {
+        return
+      }
+      if (!latestRoot) {
+        return
+      }
+      await checkCorrectNetwork()
+
+      const { root, total } = await ShardedMerkleTree.fetchRootFile(latestRoot)
+      const totalAmount = BigNumber.from(total)
+      const calldata = await contract.populateTransaction.setMerkleRoot(latestRoot, totalAmount)
+      setCalldata(JSON.stringify(calldata, null, 2))
+    } catch (err: any) {
+      console.error(err)
+      setError(err.message)
+    }
+  }
+
+  async function setMerkleRootTx() {
+    try {
       if (!wallet) {
+        return
+      }
+      if (!contract) {
         return
       }
       if (!provider) {
@@ -200,10 +260,10 @@ console.log(claimRecipient, totalAmount, proof)
       }
       await checkCorrectNetwork()
 
-      const { root, total } = await ShardedMerkleTree.fetchRootFile()
+      const { root, total } = await ShardedMerkleTree.fetchRootFile(latestRoot)
       const totalAmount = BigNumber.from(total)
-      const calldata = await contract.populateTransaction.setMerkleRoot(latestRoot, totalAmount)
-      setCalldata(JSON.stringify(calldata, null, 2))
+      const tx = await contract.setMerkleRoot(latestRoot, totalAmount)
+      setSuccess(`Sent ${tx.hash}`)
     } catch (err: any) {
       console.error(err)
       setError(err.message)
@@ -218,42 +278,56 @@ console.log(claimRecipient, totalAmount, proof)
             Merkle Drop
           </Typography>
         </Box>
-        {!!address && (
-          <Box display="flex" flexDirection="column">
-            <Box mb={2} display="flex">
-              <Typography variant="body2">
-                network: {networkName}
-              </Typography>
-            </Box>
-            <Box mb={2} display="flex">
-              <Typography variant="body2">
-                address: {address}
-              </Typography>
-            </Box>
+        <Box mb={4} display="flex" flexDirection="column">
+          <Box mb={2} display="flex">
+            <Typography variant="body2">
+              network: {networkName}
+            </Typography>
+          </Box>
+          {!!address && (
+              <Box mb={2} display="flex">
+                <Typography variant="body2">
+                  account address: {address}
+                </Typography>
+              </Box>
+          )}
+          {!!address && (
             <Box mb={2}>
               <Typography variant="body2">
-                balance: <span>{balance} ETH</span>
+                account balance: <span>{balance} ETH</span>
               </Typography>
             </Box>
-            <Box mb={2} display="flex">
-              <Typography variant="body2">
-                onchain merkle root: {onchainRoot}
-              </Typography>
-            </Box>
-            <Box mb={2} display="flex">
-              <Typography variant="body2">
-                latest repo merkle root: {latestRoot}
-              </Typography>
-            </Box>
+          )}
+          <Box mb={2} display="flex">
+            <Typography variant="body2">
+              onchain merkle root: {onchainRoot}
+            </Typography>
           </Box>
-        )}
+          <Box mb={2} display="flex">
+            <Typography variant="body2">
+              latest repo merkle root: {latestRoot}
+            </Typography>
+          </Box>
+          <Box mb={2} display="flex">
+            <Typography variant="body2">
+              latest repo merkle root total: {latestRootTotal}
+            </Typography>
+          </Box>
+        </Box>
         {!address && (
           <Box mb={4}>
             <Button onClick={connect} variant="contained">Connect</Button>
           </Box>
         )}
+        <Box mb={4} display="flex" flexDirection="column">
+          <Box mb={2}>
+            <TextField style={{ width: '420px' }} value={rewardsContractAddress} onChange={(event: any) => {
+              setRewardsContractAddress(event.target.value)
+            }} label="Merkle rewards contract address" placeholder="0x..."/>
+          </Box>
+        </Box>
         {!!wallet && (
-          <Box mt={20} mb={4} display="flex" flexDirection="column">
+          <Box mb={4} display="flex" flexDirection="column">
             <Box mb={2}>
               <TextField style={{ width: '420px' }} value={claimRecipient} onChange={(event: any) => {
                 setClaimRecipient(event.target.value)
@@ -271,16 +345,21 @@ console.log(claimRecipient, totalAmount, proof)
             )}
           </Box>
         )}
+        <Box mb={4}>
+          <Box mb={2}>
+            <Button onClick={getCalldata} variant="contained">Get setMerkleRoot calldata</Button>
+          </Box>
+          {!!calldata && (
+            <Box>
+              <TextField style={{ width: '500px' }} multiline value={calldata} />
+            </Box>
+          )}
+        </Box>
         {!!address && (
           <Box mb={4}>
             <Box mb={2}>
-              <Button onClick={getCalldata} variant="contained">Get setMerkleRoot calldata</Button>
+              <Button onClick={setMerkleRootTx} variant="contained">setMerkleRoot</Button>
             </Box>
-            {!!calldata && (
-              <Box>
-                <TextField style={{ width: '500px' }} multiline value={calldata} />
-              </Box>
-            )}
           </Box>
         )}
         {!!error && (

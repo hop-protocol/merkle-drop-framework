@@ -4,7 +4,7 @@ const controller = new Controller()
 
 async function main () {
   await controller.pullRewardsDataFromRepo()
-  // await controller.generateRoot()
+  await controller.generateRoot()
   await controller.pushOutputToRemoteRepo()
 
   //const rootHash = '0xdb4beed18949aa3a409986717886e99a3bd1302fa77038cf75b86352015f2823'

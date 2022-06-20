@@ -6,10 +6,11 @@ import { ShardedMerkleTree } from './merkle'
 import simpleGit from 'simple-git'
 import { constants, Wallet, BigNumber, Contract, providers } from 'ethers'
 import { formatUnits, parseUnits } from 'ethers/lib/utils'
-import { rewardsContractAddress, tokenAddress } from './config'
 import merkleRewardsAbi from './abi/MerkleRewards.json'
 import tokenAbi from './abi/ERC20.json'
 
+const rewardsContractAddress = process.env.REWARDS_CONTRACT_ADDRESS
+const tokenAddress = process.env.TOKEN_ADDRESS
 const privateKey = process.env.PRIVATE_KEY
 const rewardsDataGitUrl = process.env.REWARDS_DATA_GIT_URL
 const rewardsDataOutputGitUrl = process.env.REWARDS_DATA_OUTPUT_GIT_URL
@@ -41,7 +42,7 @@ export class Controller {
     } catch (err) {
     }
     await git.pull('origin', 'master')
-    console.log('done')
+    console.log('done pulling data')
   }
 
   async pushOutputToRemoteRepo () {
@@ -71,22 +72,10 @@ export class Controller {
     await git.add('*')
     await git.commit('Update data')
     await git.push('origin', 'master')
-    console.log('done')
+    console.log('done pushing merkle data')
   }
 
   async generateRoot () {
-    /*
-    const json = fs
-      .readFileSync(path.resolve(__dirname, './data/data.json'), { encoding: 'utf-8' })
-      .split('\n')
-      .filter(x => x.length > 0)
-      .map(line => {
-        const data = JSON.parse(line)
-        const owner = data.owner
-        delete data.owner
-        return [owner, data]
-      })
-    */
     const dataPath = path.resolve(dataRepoPath, 'data')
     const paths = await globby(`${dataPath}/*`)
     let data : any = {}
@@ -120,10 +109,18 @@ export class Controller {
 
     const shardNybbles = 2
     const outDirectory = path.resolve(outputRepoPath, 'data')
+    if (fs.existsSync(outDirectory) && outDirectory.startsWith('/tmp')) {
+      fs.rmSync(outDirectory, { recursive: true, force: true })
+    }
 
     const tree = ShardedMerkleTree.build(json, shardNybbles, outDirectory)
     const renamedDir = path.resolve(outputRepoPath, tree.getHexRoot())
-    fs.renameSync(outDirectory, renamedDir)
+    if (!fs.existsSync(renamedDir)) {
+      fs.renameSync(outDirectory, renamedDir)
+    }
+    if (fs.existsSync(outDirectory) && outDirectory.startsWith('/tmp')) {
+      fs.rmSync(outDirectory, { recursive: true, force: true })
+    }
     const rootHash = tree.getHexRoot()
     const latestFile = path.resolve(outputRepoPath, 'latest.json')
     fs.writeFileSync(latestFile, JSON.stringify({root: rootHash}))
@@ -153,7 +150,7 @@ export class Controller {
     const tx = await contract.setMerkleRoot(root, total)
     console.log('sent', tx.hash)
     await tx.wait()
-    console.log('done')
+    console.log('done setting root onchain')
   }
 
   async claim (root: string, account: string) {
@@ -169,7 +166,7 @@ export class Controller {
     const tx = await contract.claim(account, totalAmount, proof)
     console.log('sent', tx.hash)
     await tx.wait()
-    console.log('done')
+    console.log('done claiming onchain')
   }
 
   async getClaimed (account: string) {
