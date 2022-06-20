@@ -43,6 +43,7 @@ export class Controller {
     }
     await git.pull('origin', 'master')
     console.log('done pulling data')
+    return true
   }
 
   async pushOutputToRemoteRepo () {
