@@ -76,7 +76,11 @@ export class Controller {
     console.log('done pushing merkle data')
   }
 
-  async generateRoot () {
+  async generateRoot (options: any = {}) {
+    let shouldWrite = true
+    if (options.shouldWrite === false) {
+      shouldWrite = false
+    }
     const dataPath = path.resolve(dataRepoPath, 'data')
     const paths = await globby(`${dataPath}/*`)
     let data : any = {}
@@ -109,23 +113,33 @@ export class Controller {
     }
 
     const shardNybbles = 2
-    const outDirectory = path.resolve(outputRepoPath, 'data')
-    if (fs.existsSync(outDirectory) && outDirectory.startsWith('/tmp')) {
-      fs.rmSync(outDirectory, { recursive: true, force: true })
+    let outDirectory : any
+    if (shouldWrite){
+      outDirectory = path.resolve(outputRepoPath, 'data')
+      if (fs.existsSync(outDirectory) && outDirectory.startsWith('/tmp')) {
+        fs.rmSync(outDirectory, { recursive: true, force: true })
+      }
     }
 
-    const tree = ShardedMerkleTree.build(json, shardNybbles, outDirectory)
-    const renamedDir = path.resolve(outputRepoPath, tree.getHexRoot())
-    if (!fs.existsSync(renamedDir)) {
-      fs.renameSync(outDirectory, renamedDir)
-    }
-    if (fs.existsSync(outDirectory) && outDirectory.startsWith('/tmp')) {
-      fs.rmSync(outDirectory, { recursive: true, force: true })
-    }
+    const { tree, total } = ShardedMerkleTree.build(json, shardNybbles, outDirectory)
     const rootHash = tree.getHexRoot()
-    const latestFile = path.resolve(outputRepoPath, 'latest.json')
-    fs.writeFileSync(latestFile, JSON.stringify({root: rootHash}))
+
+    if (shouldWrite) {
+      const renamedDir = path.resolve(outputRepoPath, tree.getHexRoot())
+      if (!fs.existsSync(renamedDir)) {
+        fs.renameSync(outDirectory, renamedDir)
+      }
+      if (fs.existsSync(outDirectory) && outDirectory.startsWith('/tmp')) {
+        fs.rmSync(outDirectory, { recursive: true, force: true })
+      }
+      const latestFile = path.resolve(outputRepoPath, 'latest.json')
+      fs.writeFileSync(latestFile, JSON.stringify({root: rootHash}))
+    }
+    const onchainPreviousTotalAmount = await contract.previousTotalRewards()
+    const additionalAmount = total.sub(onchainPreviousTotalAmount)
     console.log(rootHash)
+    const calldata = await contract.populateTransaction.setMerkleRoot(rootHash, total)
+    return {tree, total, additionalAmount, onchainPreviousTotalAmount, calldata}
   }
 
   async setMerkleRoot (rootHash: string) {

@@ -110,22 +110,24 @@ class ShardedMerkleTree {
     )
     const tree = new MerkleTree(Object.values(roots), keccak256, { sort: true })
 
-    const fs = require('fs')
-    const path = require('path')
-    fs.mkdirSync(directory, { recursive: true })
-    fs.writeFileSync(path.join(directory, 'root.json'), JSON.stringify({
-      root: tree.getHexRoot(),
-      shardNybbles,
-      total: total.toString()
-    }))
-    for (const [shard, entries] of Object.entries(shards)) {
-      fs.writeFileSync(path.join(directory, shard + '.json'), JSON.stringify({
-        proof: tree.getProof(roots[shard]).map((value) => '0x' + value.data.toString('hex')),
-        entries: Object.fromEntries(entries as any)
+    if (directory) {
+      const fs = require('fs')
+      const path = require('path')
+      fs.mkdirSync(directory, { recursive: true })
+      fs.writeFileSync(path.join(directory, 'root.json'), JSON.stringify({
+        root: tree.getHexRoot(),
+        shardNybbles,
+        total: total.toString()
       }))
+      for (const [shard, entries] of Object.entries(shards)) {
+        fs.writeFileSync(path.join(directory, shard + '.json'), JSON.stringify({
+          proof: tree.getProof(roots[shard]).map((value) => '0x' + value.data.toString('hex')),
+          entries: Object.fromEntries(entries as any)
+        }))
+      }
     }
 
-    return tree
+    return { tree, total }
   }
 
   static async fetchRootFile () {

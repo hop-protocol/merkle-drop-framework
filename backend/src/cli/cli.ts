@@ -16,5 +16,3 @@ async function main () {
   // await controller.getClaimed(account)
   //await controller.getOnchainRoot()
 }
-
-main().catch(console.error)
