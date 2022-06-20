@@ -7,11 +7,10 @@ import Alert from '@mui/material/Alert'
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import './App.css'
-import { Contract, BigNumber, providers, Wallet } from 'ethers'
-import { keccak256, formatEther, formatUnits } from 'ethers/lib/utils'
+import { Contract, BigNumber, providers } from 'ethers'
+import { formatEther, formatUnits } from 'ethers/lib/utils'
 import merkleRewardsAbi from './abi/MerkleRewards.json'
 import { ShardedMerkleTree } from './merkle'
-import { config } from './config'
 
 const rpcUrl = 'https://goerli.rpc.authereum.com'
 const requiredChainId = 5
@@ -28,6 +27,13 @@ function App () {
   const [onchainRoot, setOnchainRoot] = useState('')
   const [latestRoot, setLatestRoot] = useState('')
   const [latestRootTotal, setLatestRootTotal] = useState('')
+  const [merkleBaseUrl, setMerkleBaseUrl] = useState(() => {
+    try {
+      return localStorage.getItem('merkleBaseUrl') || ''
+    } catch (err) {
+    }
+    return ''
+  })
   const [calldata, setCalldata] = useState('')
   const [rewardsContractAddress, setRewardsContractAddress] = useState(() => {
     try {
@@ -65,6 +71,12 @@ function App () {
     } catch (err) {
     }
   }, [rewardsContractAddress])
+  useEffect(() => {
+    try {
+      localStorage.setItem('merkleBaseUrl', merkleBaseUrl || '')
+    } catch (err) {
+    }
+  }, [merkleBaseUrl])
 
   const updateBalance = async () => {
     try {
@@ -110,10 +122,13 @@ function App () {
 
   const getLatestRoot = async () => {
     try {
-      const res = await fetch(`${config.merkleBaseUrl}/latest.json`)
+      if (!merkleBaseUrl) {
+        return
+      }
+      const res = await fetch(`${merkleBaseUrl}/latest.json`)
       const json = await res.json()
       setLatestRoot(json.root)
-      const { root, total } = await ShardedMerkleTree.fetchRootFile(json.root)
+      const { root, total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, json.root)
       if (root === json.root) {
         setLatestRootTotal(formatUnits(total, 18))
       }
@@ -124,7 +139,7 @@ function App () {
 
   useEffect(() => {
     getLatestRoot().catch(console.error)
-  }, [contract])
+  }, [contract, merkleBaseUrl])
 
   useInterval(getLatestRoot, 5 * 1000)
 
@@ -156,8 +171,11 @@ function App () {
       if (!contract) {
         return
       }
+      if (!merkleBaseUrl) {
+        return
+      }
       if (claimRecipient) {
-        const shardedMerkleTree = await ShardedMerkleTree.fetchTree(onchainRoot)
+        const shardedMerkleTree = await ShardedMerkleTree.fetchTree(merkleBaseUrl, onchainRoot)
         const [entry] = await shardedMerkleTree.getProof(claimRecipient)
         if (!entry) {
           return
@@ -174,7 +192,7 @@ function App () {
 
   useEffect(() => {
     getClaimableAmount().catch(console.error)
-  }, [contract, claimRecipient, onchainRoot])
+  }, [contract, claimRecipient, onchainRoot, merkleBaseUrl])
 
   useInterval(getClaimableAmount, 5 * 1000)
 
@@ -229,10 +247,13 @@ function App () {
       if (!onchainRoot) {
         return
       }
+      if (!merkleBaseUrl) {
+        return
+      }
       setSending(true)
       await checkCorrectNetwork()
 
-      const shardedMerkleTree = await ShardedMerkleTree.fetchTree(onchainRoot)
+      const shardedMerkleTree = await ShardedMerkleTree.fetchTree(merkleBaseUrl, onchainRoot)
       const [entry, proof] = await shardedMerkleTree.getProof(claimRecipient)
       if (!entry) {
         throw new Error('no entry')
@@ -256,9 +277,12 @@ console.log(claimRecipient, totalAmount, proof)
       if (!latestRoot) {
         return
       }
+      if (!merkleBaseUrl) {
+        return
+      }
       await checkCorrectNetwork()
 
-      const { root, total } = await ShardedMerkleTree.fetchRootFile(latestRoot)
+      const { root, total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, latestRoot)
       const totalAmount = BigNumber.from(total)
       const calldata = await contract.populateTransaction.setMerkleRoot(latestRoot, totalAmount)
       setCalldata(JSON.stringify(calldata, null, 2))
@@ -285,9 +309,12 @@ console.log(claimRecipient, totalAmount, proof)
       if (!latestRoot) {
         return
       }
+      if (!merkleBaseUrl) {
+        return
+      }
       await checkCorrectNetwork()
 
-      const { root, total } = await ShardedMerkleTree.fetchRootFile(latestRoot)
+      const { root, total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, latestRoot)
       const totalAmount = BigNumber.from(total)
       const tx = await contract.setMerkleRoot(latestRoot, totalAmount)
       setSuccess(`Sent ${tx.hash}`)
@@ -351,6 +378,13 @@ console.log(claimRecipient, totalAmount, proof)
             <TextField style={{ width: '420px' }} value={rewardsContractAddress} onChange={(event: any) => {
               setRewardsContractAddress(event.target.value)
             }} label="Merkle rewards contract address" placeholder="0x..."/>
+          </Box>
+        </Box>
+        <Box mb={4} display="flex" flexDirection="column">
+          <Box mb={2}>
+            <TextField style={{ width: '520px' }} value={merkleBaseUrl} onChange={(event: any) => {
+              setMerkleBaseUrl(event.target.value.replace(/\/$/, ''))
+            }} label="Merkle data repo base url" placeholder="https://raw.githubusercontent.com/hop-protocol/merkle-data-output/master"/>
           </Box>
         </Box>
         {!!wallet && (
