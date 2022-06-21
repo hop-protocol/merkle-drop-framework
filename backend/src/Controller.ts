@@ -81,20 +81,31 @@ export class Controller {
     if (options.shouldWrite === false) {
       shouldWrite = false
     }
+    let { startTimestamp, endTimestamp } = options
     const dataPath = path.resolve(dataRepoPath, 'data')
     const paths = await globby(`${dataPath}/*`)
     let data : any = {}
+    let timestampRangeTotal = BigNumber.from(0)
     if (paths.length > 1) {
       const updatedData: any = {}
       const filenames = paths.map((filename: string) => {
         return Number(path.parse(filename).name)
       }).sort((a, b) => a - b)
       const info = path.parse(paths[0])
-      for (const filename of filenames) {
-        const file = `${info.dir}/${filename}${info.ext}`
+      if (!startTimestamp) {
+        startTimestamp = filenames[filenames.length - 1] - 1
+      }
+      for (const filenameTimestamp of filenames) {
+        if (endTimestamp && filenameTimestamp > endTimestamp) {
+          continue
+        }
+        const file = `${info.dir}/${filenameTimestamp}${info.ext}`
         const previousData = require(file)
         for (const address in previousData) {
           let amount = BigNumber.from(previousData[address])
+          if (startTimestamp && filenameTimestamp >= startTimestamp) {
+            timestampRangeTotal = timestampRangeTotal.add(amount)
+          }
           if (updatedData[address]) {
             amount = amount.add(BigNumber.from(updatedData[address]))
           }
@@ -105,6 +116,10 @@ export class Controller {
       data = updatedData
     } else {
       data = require(paths[0])
+      for (const address in data) {
+        let amount = BigNumber.from(data[address])
+        timestampRangeTotal = timestampRangeTotal.add(amount)
+      }
     }
 
     const json: any[] = []
@@ -136,7 +151,7 @@ export class Controller {
       fs.writeFileSync(latestFile, JSON.stringify({root: rootHash}))
     }
     const onchainPreviousTotalAmount = await contract.previousTotalRewards()
-    const additionalAmount = total.sub(onchainPreviousTotalAmount)
+    const additionalAmount = timestampRangeTotal
     console.log(rootHash)
     const calldata = await contract.populateTransaction.setMerkleRoot(rootHash, total)
     return {tree, total, additionalAmount, onchainPreviousTotalAmount, calldata}

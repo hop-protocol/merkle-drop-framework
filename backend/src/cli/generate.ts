@@ -5,19 +5,23 @@ import { formatUnits } from 'ethers/lib/utils'
 program
   .command('generate')
   .description('Generate merkle data')
-  .action(async (str, options) => {
+  .option('--previous-snapshot-timestamp <value>', 'Start timestamp in seconds')
+  .option('--snapshot-timestamp <value>', 'End timestamp in seconds')
+  .action(async (source, options) => {
     try {
-      await main()
+      await main(source)
     } catch (err) {
       console.error(err)
     }
   })
 
-async function main () {
+async function main (options: any = {}) {
+  const startTimestamp = Number(options.previousSnapshotTimestamp)
+  const endTimestamp = Number(options.snapshotTimestamp)
   const controller = new Controller()
 
   await controller.pullRewardsDataFromRepo()
-  const { tree, total, additionalAmount, onchainPreviousTotalAmount, calldata } = await controller.generateRoot({shouldWrite: false})
+  const { tree, total, additionalAmount, onchainPreviousTotalAmount, calldata } = await controller.generateRoot({shouldWrite: false, startTimestamp, endTimestamp})
   const rootHash = tree.getHexRoot()
   console.log('root:', rootHash)
   console.log('total:', `${total.toString()} (${formatUnits(total.toString(), 18)})`)
