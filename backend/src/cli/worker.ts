@@ -25,7 +25,7 @@ async function main () {
       console.log('generating root')
       await controller.generateRoot()
 
-      console.log('pusing merkle data')
+      console.log('pushing merkle data')
       await controller.pushOutputToRemoteRepo()
     }
 

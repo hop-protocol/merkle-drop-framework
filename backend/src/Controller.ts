@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import fse from 'fs-extra'
 import fs from 'fs'
 import path from 'path'
 import globby from 'globby'
@@ -38,10 +39,23 @@ export class Controller {
     const git = simpleGit()
 
     try {
-      await git.clone(rewardsDataGitUrl, dataRepoPath)
+      await git.clone(rewardsDataOutputGitUrl, outputRepoPath)
     } catch (err) {
     }
-    await git.pull('origin', 'master')
+
+    try {
+      await git.clone(rewardsDataGitUrl, dataRepoPath)
+    } catch (err) {
+      // console.log('clone error', err)
+    }
+
+    try {
+      await git.cwd(dataRepoPath)
+      await git.pull('origin', 'master')
+    } catch (err) {
+      console.log('pull error')
+      throw err
+    }
     console.log('done pulling data')
     return true
   }
@@ -50,29 +64,49 @@ export class Controller {
     if (!rewardsDataOutputGitUrl) {
       throw new Error('rewardsDataOutputGitUrl required')
     }
-    const git = simpleGit(outputRepoPath)
+    const git = simpleGit()
 
     try {
-      await git.init()
+      await git.cwd(outputRepoPath)
     } catch (err) {
-      console.log(err)
-    }
-
-    try {
-      await git.clone(rewardsDataOutputGitUrl, outputRepoPath)
-    } catch (err) {
+      console.log('clone error', err)
     }
     try {
       await git.addRemote('origin', rewardsDataOutputGitUrl)
     } catch (err) {
+      //console.log('remote error', err)
     }
+
+    try {
+      const emailConfig  = await git.getConfig('user.email')
+      if (!emailConfig.value) {
+        await git.addConfig('user.email', process.env.GIT_USER_EMAIL, false, 'local')
+      }
+      const nameConfig = await git.getConfig('user.name')
+      if (!nameConfig.value) {
+        await git.addConfig('user.name', process.env.GIT_USER_NAME, false, 'local')
+      }
+    } catch (err) {
+      console.log('config error', err)
+    }
+
     try {
       await git.pull('origin', 'master')
     } catch (err) {
+      console.log('pull error', err)
+      //throw err
     }
+
     await git.add('*')
+
     await git.commit('Update data')
-    await git.push('origin', 'master')
+
+    try {
+      await git.push('origin', 'master')
+    } catch (err) {
+      console.log('push error', err)
+      throw err
+    }
     console.log('done pushing merkle data')
   }
 
