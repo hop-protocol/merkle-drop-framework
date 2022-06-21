@@ -1,8 +1,8 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
+  "name": "@hop-protocol/mdf",
+  "version": "0.0.2-beta.1",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "dev": "tsc -w",
     "start": "PORT=8000 ts-node src/index.ts",
@@ -10,7 +10,11 @@
     "lint": "npx eslint --ext .ts --fix src/*.ts",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "prepare": "npm run build"
+  },
+  "bin": {
+    "mdf": "bin/mdf"
   },
   "author": "",
   "license": "ISC",
