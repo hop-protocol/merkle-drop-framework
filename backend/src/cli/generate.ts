@@ -16,16 +16,23 @@ program
   })
 
 async function main (options: any = {}) {
-  const startTimestamp = Number(options.previousSnapshotTimestamp)
-  const endTimestamp = Number(options.snapshotTimestamp)
+  //const startTimestamp = Number(options.previousSnapshotTimestamp)
+  //const endTimestamp = Number(options.snapshotTimestamp)
+
   const controller = new Controller()
 
-  await controller.pullRewardsDataFromRepo()
-  const { tree, total, additionalAmount, onchainPreviousTotalAmount, calldata } = await controller.generateRoot({shouldWrite: false, startTimestamp, endTimestamp})
+  const startTimestamp = 1656110900
+  const endTimestamp = Math.floor(Date.now()/1000)
+
+  console.log('startTimestamp', startTimestamp)
+  console.log('endTimestamp', endTimestamp)
+
+  //await controller.pullRewardsDataFromRepo()
+  const { tree, total, onchainPreviousTotalAmount, calldata } = await controller.generateRoot({shouldWrite: false, startTimestamp, endTimestamp})
   const rootHash = tree.getHexRoot()
   console.log('root:', rootHash)
   console.log('total:', `${total.toString()} (${formatUnits(total.toString(), 18)})`)
-  console.log('additionalAmount:', `${additionalAmount.toString()} (${formatUnits(additionalAmount.toString(), 18)})`)
+  //console.log('additionalAmount:', `${additionalAmount.toString()} (${formatUnits(additionalAmount.toString(), 18)})`)
   console.log('onchainPreviousTotalAmount:', `${onchainPreviousTotalAmount.toString()} (${formatUnits(onchainPreviousTotalAmount.toString(), 18)})`)
   console.log('calldata:', JSON.stringify(calldata))
   console.log('done')

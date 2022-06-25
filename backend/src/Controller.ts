@@ -1,5 +1,4 @@
 import 'dotenv/config'
-import fse from 'fs-extra'
 import fs from 'fs'
 import path from 'path'
 import globby from 'globby'
@@ -9,6 +8,7 @@ import { constants, Wallet, BigNumber, Contract, providers } from 'ethers'
 import { formatUnits, parseUnits } from 'ethers/lib/utils'
 import merkleRewardsAbi from './abi/MerkleRewards.json'
 import tokenAbi from './abi/ERC20.json'
+import { FeeRefund } from '@hop-protocol/fee-refund'
 
 const rewardsContractAddress = process.env.REWARDS_CONTRACT_ADDRESS
 const tokenAddress = process.env.TOKEN_ADDRESS
@@ -17,8 +17,23 @@ const rewardsDataGitUrl = process.env.REWARDS_DATA_GIT_URL
 const rewardsDataOutputGitUrl = process.env.REWARDS_DATA_OUTPUT_GIT_URL
 const dataRepoPath = process.env.DATA_REPO_PATH
 const outputRepoPath = process.env.OUTPUT_REPO_PATH
+const network = process.env.NETWORK
 
-const provider = new providers.StaticJsonRpcProvider('https://goerli.rpc.authereum.com')
+if (!network) {
+  throw new Error('network env var is required')
+}
+
+const rpcUrls = {
+  mainnet: process.env.ETHEREUM_RPC_URL,
+  polygon: process.env.POLYGON_RPC_URL,
+  gnosis: process.env.GNOSIS_RPC_URL,
+  arbitrum: process.env.ARBITRUM_RPC_URL,
+  optimism: process.env.OPTIMISM_RPC_URL
+}
+
+console.log(rpcUrls)
+
+const provider = new providers.StaticJsonRpcProvider(rpcUrls[network])
 const signer = new Wallet(privateKey, provider)
 const contract = new Contract(rewardsContractAddress, merkleRewardsAbi, signer)
 const token = new Contract(tokenAddress, tokenAbi, signer)
@@ -74,11 +89,11 @@ export class Controller {
     try {
       await git.addRemote('origin', rewardsDataOutputGitUrl)
     } catch (err) {
-      //console.log('remote error', err)
+      // console.log('remote error', err)
     }
 
     try {
-      const emailConfig  = await git.getConfig('user.email')
+      const emailConfig = await git.getConfig('user.email')
       if (!emailConfig.value) {
         await git.addConfig('user.email', process.env.GIT_USER_EMAIL, false, 'local')
       }
@@ -94,7 +109,7 @@ export class Controller {
       await git.pull('origin', 'master')
     } catch (err) {
       console.log('pull error', err)
-      //throw err
+      // throw err
     }
 
     await git.add('*')
@@ -115,46 +130,8 @@ export class Controller {
     if (options.shouldWrite === false) {
       shouldWrite = false
     }
-    let { startTimestamp, endTimestamp } = options
-    const dataPath = path.resolve(dataRepoPath, 'data')
-    const paths = await globby(`${dataPath}/*`)
-    let data : any = {}
-    let timestampRangeTotal = BigNumber.from(0)
-    if (paths.length > 1) {
-      const updatedData: any = {}
-      const filenames = paths.map((filename: string) => {
-        return Number(path.parse(filename).name)
-      }).sort((a, b) => a - b)
-      const info = path.parse(paths[0])
-      if (!startTimestamp) {
-        startTimestamp = filenames[filenames.length - 1] - 1
-      }
-      for (const filenameTimestamp of filenames) {
-        if (endTimestamp && filenameTimestamp > endTimestamp) {
-          continue
-        }
-        const file = `${info.dir}/${filenameTimestamp}${info.ext}`
-        const previousData = require(file)
-        for (const address in previousData) {
-          let amount = BigNumber.from(previousData[address])
-          if (startTimestamp && filenameTimestamp >= startTimestamp) {
-            timestampRangeTotal = timestampRangeTotal.add(amount)
-          }
-          if (updatedData[address]) {
-            amount = amount.add(BigNumber.from(updatedData[address]))
-          }
-          updatedData[address] = amount.toString()
-        }
-      }
 
-      data = updatedData
-    } else {
-      data = require(paths[0])
-      for (const address in data) {
-        let amount = BigNumber.from(data[address])
-        timestampRangeTotal = timestampRangeTotal.add(amount)
-      }
-    }
+    const { data } = await this.getData(options)
 
     const json: any[] = []
     for (const address in data) {
@@ -163,7 +140,7 @@ export class Controller {
 
     const shardNybbles = 2
     let outDirectory : any
-    if (shouldWrite){
+    if (shouldWrite) {
       outDirectory = path.resolve(outputRepoPath, 'data')
       if (fs.existsSync(outDirectory) && outDirectory.startsWith('/tmp')) {
         fs.rmSync(outDirectory, { recursive: true, force: true })
@@ -182,13 +159,13 @@ export class Controller {
         fs.rmSync(outDirectory, { recursive: true, force: true })
       }
       const latestFile = path.resolve(outputRepoPath, 'latest.json')
-      fs.writeFileSync(latestFile, JSON.stringify({root: rootHash}))
+      fs.writeFileSync(latestFile, JSON.stringify({ root: rootHash }))
     }
     const onchainPreviousTotalAmount = await contract.previousTotalRewards()
-    const additionalAmount = timestampRangeTotal
+    // const additionalAmount = timestampRangeTotal
     console.log(rootHash)
     const calldata = await contract.populateTransaction.setMerkleRoot(rootHash, total)
-    return {tree, total, additionalAmount, onchainPreviousTotalAmount, calldata}
+    return { tree, total, onchainPreviousTotalAmount, calldata }
   }
 
   async setMerkleRoot (rootHash: string) {
@@ -246,5 +223,77 @@ export class Controller {
   async getOnchainRoot () {
     const root = await contract.merkleRoot()
     console.log('root', root)
+  }
+
+  async getData (options: any) {
+    // return this.getDataFromRepo(options)
+    return this.getDataFromPackage(options)
+  }
+
+  async getDataFromRepo (options: any) {
+    let { startTimestamp, endTimestamp } = options
+    const dataPath = path.resolve(dataRepoPath, 'data')
+    const paths = await globby(`${dataPath}/*`)
+    let data : any = {}
+    let timestampRangeTotal = BigNumber.from(0)
+    if (paths.length > 1) {
+      const updatedData: any = {}
+      const filenames = paths.map((filename: string) => {
+        return Number(path.parse(filename).name)
+      }).sort((a, b) => a - b)
+      const info = path.parse(paths[0])
+      if (!startTimestamp) {
+        startTimestamp = filenames[filenames.length - 1] - 1
+      }
+      for (const filenameTimestamp of filenames) {
+        if (endTimestamp && filenameTimestamp > endTimestamp) {
+          continue
+        }
+        const file = `${info.dir}/${filenameTimestamp}${info.ext}`
+        const previousData = require(file)
+        for (const address in previousData) {
+          let amount = BigNumber.from(previousData[address])
+          if (startTimestamp && filenameTimestamp >= startTimestamp) {
+            timestampRangeTotal = timestampRangeTotal.add(amount)
+          }
+          if (updatedData[address]) {
+            amount = amount.add(BigNumber.from(updatedData[address]))
+          }
+          updatedData[address] = amount.toString()
+        }
+      }
+
+      data = updatedData
+    } else {
+      data = require(paths[0])
+      for (const address in data) {
+        const amount = BigNumber.from(data[address])
+        timestampRangeTotal = timestampRangeTotal.add(amount)
+      }
+    }
+
+    return { data, timestampRangeTotal }
+  }
+
+  async getDataFromPackage (options: any) {
+    const { startTimestamp, endTimestamp } = options
+    const dbDir = path.resolve(__dirname, 'db')
+    const refundChain = 'optimism'
+    const refundPercentage = 0.5
+    const merkleRewardsContractAddress = rewardsContractAddress
+
+    const _config = { dbDir, rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain }
+    const feeRefund = new FeeRefund(_config)
+
+    console.log('seeding')
+    console.time('seeding')
+    await feeRefund.seed()
+    console.timeEnd('seeding')
+    console.log('calculating fees')
+    console.time('calculateFees')
+    const result = await feeRefund.calculateFees(endTimestamp)
+    console.timeEnd('calculateFees')
+    console.log('getData done', result)
+    return { data: result }
   }
 }

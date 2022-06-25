@@ -8,3 +8,6 @@ generated
 data
 input.json
 output.json
+db
+src/db
+src/db*
