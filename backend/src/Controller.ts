@@ -10,6 +10,7 @@ import merkleRewardsAbi from './abi/MerkleRewards.json'
 import tokenAbi from './abi/ERC20.json'
 import { FeeRefund } from '@hop-protocol/fee-refund'
 
+const network = process.env.NETWORK
 const rewardsContractAddress = process.env.REWARDS_CONTRACT_ADDRESS
 const tokenAddress = process.env.TOKEN_ADDRESS
 const privateKey = process.env.PRIVATE_KEY
@@ -17,11 +18,26 @@ const rewardsDataGitUrl = process.env.REWARDS_DATA_GIT_URL
 const rewardsDataOutputGitUrl = process.env.REWARDS_DATA_OUTPUT_GIT_URL
 const dataRepoPath = process.env.DATA_REPO_PATH
 const outputRepoPath = process.env.OUTPUT_REPO_PATH
-const network = process.env.NETWORK
 const feesDbPath = process.env.FEES_DB_PATH || __dirname
 
 if (!network) {
-  throw new Error('network env var is required')
+  throw new Error('NETWORK is required')
+}
+
+if (!rewardsContractAddress) {
+  throw new Error('REWARDS_CONTRACT_ADDRESS is required')
+}
+
+if (!tokenAddress) {
+  throw new Error('TOKEN_ADDRESS is required')
+}
+
+if (!rewardsDataOutputGitUrl) {
+  throw new Error('REWARDS_DATA_OUTPUT_GIT_URL is required')
+}
+
+if (!outputRepoPath) {
+  throw new Error('OUTPUT_REPO_PATH is required')
 }
 
 const rpcUrls = {
@@ -35,22 +51,23 @@ const rpcUrls = {
 console.log(rpcUrls)
 
 const provider = new providers.StaticJsonRpcProvider(rpcUrls[network])
-const signer = new Wallet(privateKey, provider)
-const contract = new Contract(rewardsContractAddress, merkleRewardsAbi, signer)
-const token = new Contract(tokenAddress, tokenAbi, signer)
 
-if (!dataRepoPath) {
-  throw new Error('dataRepoPath required')
+let signer : any
+if (privateKey) {
+  signer = new Wallet(privateKey, provider)
 }
 
-if (!outputRepoPath) {
-  throw new Error('outputRepoPath required')
-}
+const signerOrProvider = signer ?? provider
+const contract = new Contract(rewardsContractAddress, merkleRewardsAbi, signerOrProvider)
+const token = new Contract(tokenAddress, tokenAbi, signerOrProvider)
 
 export class Controller {
   async pullRewardsDataFromRepo () {
+    if (!dataRepoPath) {
+      throw new Error('DATA_REPO_PATH is required')
+    }
     if (!rewardsDataGitUrl) {
-      throw new Error('rewardsDataGitUrl required')
+      throw new Error('REWARDS_DATA_GIT_URL is required')
     }
     const git = simpleGit()
 
@@ -264,6 +281,9 @@ export class Controller {
 
   async getDataFromRepo (options: any) {
     let { startTimestamp, endTimestamp } = options
+    if (!dataRepoPath) {
+      throw new Error('DATA_REPO_PATH is required')
+    }
     const dataPath = path.resolve(dataRepoPath, 'data')
     const paths = await globby(`${dataPath}/*`)
     let data : any = {}
@@ -309,6 +329,9 @@ export class Controller {
 
   async getDataFromPackage (options: any) {
     const { startTimestamp, endTimestamp } = options
+    if (!feesDbPath) {
+      throw new Error('FEES_DB_PATH is required')
+    }
     const dbDir = path.resolve(feesDbPath, 'db')
 
     if (!fs.existsSync(dbDir)) {
