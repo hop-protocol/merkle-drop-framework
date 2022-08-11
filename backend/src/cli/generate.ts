@@ -5,9 +5,10 @@ import { formatUnits } from 'ethers/lib/utils'
 program
   .command('generate')
   .description('Generate merkle data')
-  .option('--previous-snapshot-timestamp <value>', 'Start timestamp in seconds')
-  .option('--snapshot-timestamp <value>', 'End timestamp in seconds')
-  .action(async (source, options) => {
+  .option('--start-timestamp <value>', 'Start timestamp in seconds')
+  .option('--end-timestamp <value>', 'End timestamp in seconds')
+  .option('--poll-interval <value>', 'Poll interval in seconds')
+  .action(async (source: any) => {
     try {
       await main(source)
     } catch (err) {
@@ -16,8 +17,8 @@ program
   })
 
 async function main (options: any = {}) {
-  const startTimestamp = Number(options.previousSnapshotTimestamp) || Math.floor((Date.now()/1000) - 60 * 60)
-  const endTimestamp = Number(options.snapshotTimestamp) || Math.floor(Date.now()/1000)
+  const startTimestamp = Number(options.startTimestamp) || Math.floor((Date.now()/1000) - 60 * 60)
+  const endTimestamp = Number(options.endTimestamp) || Math.floor(Date.now()/1000)
 
   const controller = new Controller()
 

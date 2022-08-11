@@ -6,12 +6,6 @@ import { DateTime } from 'luxon'
 
 const levelDbPath = process.env.LEVEL_DB_PATH
 
-if (!levelDbPath) {
-  throw new Error('LEVEL_DB_PATH is required')
-}
-
-const db = new Level(levelDbPath)
-
 program
   .command('worker')
   .description('Start worker')
@@ -33,6 +27,12 @@ async function main (options: any) {
 
   const pollInterval = (Number(options.pollInterval) || 10) * 1000
   let i = 0
+
+  if (!levelDbPath) {
+    throw new Error('LEVEL_DB_PATH is required')
+  }
+
+  const db = new Level(levelDbPath)
 
   while (true) {
     try {
