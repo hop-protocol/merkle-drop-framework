@@ -32,10 +32,6 @@ if (!tokenAddress) {
   throw new Error('TOKEN_ADDRESS is required')
 }
 
-if (!rewardsDataOutputGitUrl) {
-  throw new Error('REWARDS_DATA_OUTPUT_GIT_URL is required')
-}
-
 if (!outputRepoPath) {
   throw new Error('OUTPUT_REPO_PATH is required')
 }
@@ -69,6 +65,9 @@ export class Controller {
     if (!rewardsDataGitUrl) {
       throw new Error('REWARDS_DATA_GIT_URL is required')
     }
+    if (!rewardsDataOutputGitUrl) {
+      throw new Error('REWARDS_DATA_OUTPUT_GIT_URL is required')
+    }
     const git = simpleGit()
 
     try {
@@ -95,7 +94,7 @@ export class Controller {
 
   async fetchOutputRepoFirst () {
     if (!rewardsDataOutputGitUrl) {
-      throw new Error('rewardsDataOutputGitUrl required')
+      throw new Error('REWARDS_DATA_OUTPUT_GIT_URL is required')
     }
     const git = simpleGit()
 
@@ -199,7 +198,7 @@ export class Controller {
     const { tree, total } = ShardedMerkleTree.build(json, shardNybbles, outDirectory)
     const rootHash = tree.getHexRoot()
 
-    if (shouldWrite) {
+    if (shouldWrite && rootHash !== '0x') {
       const renamedDir = path.resolve(outputRepoPath, tree.getHexRoot())
       if (!fs.existsSync(renamedDir)) {
         fs.renameSync(outDirectory, renamedDir)
@@ -213,8 +212,12 @@ export class Controller {
     const onchainPreviousTotalAmount = await contract.previousTotalRewards()
     // const additionalAmount = timestampRangeTotal
     console.log(rootHash)
-    const calldata = await contract.populateTransaction.setMerkleRoot(rootHash, total)
-    return { tree, total, onchainPreviousTotalAmount, calldata }
+    let calldata : any = {}
+    if (rootHash !== '0x') {
+      calldata = await contract.populateTransaction.setMerkleRoot(rootHash, total)
+    }
+
+    return { rootHash, tree, total, onchainPreviousTotalAmount, calldata }
   }
 
   async setMerkleRoot (rootHash: string) {
@@ -345,14 +348,16 @@ export class Controller {
     const _config = { dbDir, rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain }
     const feeRefund = new FeeRefund(_config)
 
+    const id = Date.now()
+
     console.log('seeding')
-    console.time('seeding')
+    console.time('seeding ' + id)
     await feeRefund.seed()
-    console.timeEnd('seeding')
+    console.timeEnd('seeding ' + id)
     console.log('calculating fees')
-    console.time('calculateFees')
+    console.time('calculateFees ' + id)
     const result = await feeRefund.calculateFees(endTimestamp)
-    console.timeEnd('calculateFees')
+    console.timeEnd('calculateFees ' + id)
     console.log('getData done', result)
     return { data: result }
   }

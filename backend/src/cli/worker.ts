@@ -25,7 +25,7 @@ async function main (options: any) {
   const controller = new Controller()
   console.log('running worker')
 
-  const pollInterval = (Number(options.pollInterval) || 10) * 1000
+  const pollInterval = (Number(options.pollInterval) || 10)
   let i = 0
 
   if (!levelDbPath) {
@@ -63,23 +63,25 @@ async function main (options: any) {
       await controller.fetchOutputRepoFirst()
 
       console.log('generating root and writing data to disk')
-      await controller.generateRoot({
+      const { rootHash } = await controller.generateRoot({
         shouldWrite: true,
         startTimestamp,
         endTimestamp
       })
 
-      console.log('pushing merkle data from disk to repo')
-      await controller.pushOutputToRemoteRepo()
+      if (rootHash !== '0x') {
+        console.log('pushing merkle data from disk to repo')
+        await controller.pushOutputToRemoteRepo()
+      }
 
       await db.put('lastTimestamp', startTimestamp.toString())
 
       console.log('poll done')
-      console.log('next poll in ', pollInterval)
+      console.log(`next poll in ${pollInterval} seconds`)
       i++
     } catch (err) {
       console.error('poll error', err)
     }
-    await wait(pollInterval)
+    await wait(pollInterval * 1000)
   }
 }
