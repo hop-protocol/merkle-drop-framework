@@ -18,6 +18,7 @@ const rewardsDataOutputGitUrl = process.env.REWARDS_DATA_OUTPUT_GIT_URL
 const dataRepoPath = process.env.DATA_REPO_PATH
 const outputRepoPath = process.env.OUTPUT_REPO_PATH
 const network = process.env.NETWORK
+const feesDbPath = process.env.FEES_DB_PATH || __dirname
 
 if (!network) {
   throw new Error('network env var is required')
@@ -75,18 +76,49 @@ export class Controller {
     return true
   }
 
-  async pushOutputToRemoteRepo () {
+  async fetchOutputRepoFirst () {
     if (!rewardsDataOutputGitUrl) {
       throw new Error('rewardsDataOutputGitUrl required')
     }
     const git = simpleGit()
 
     try {
+      await git.clone(rewardsDataOutputGitUrl, outputRepoPath)
+    } catch (err) {
+    }
+
+    console.log('outputRepoPath:', outputRepoPath)
+
+    try {
       await git.cwd(outputRepoPath)
     } catch (err) {
       console.log('clone error', err)
     }
+
     try {
+      console.log('rewardsDataOutputGitUrl:', rewardsDataOutputGitUrl)
+      await git.addRemote('origin', rewardsDataOutputGitUrl)
+    } catch (err) {
+      // console.log('remote error', err)
+    }
+  }
+
+  async pushOutputToRemoteRepo () {
+    if (!rewardsDataOutputGitUrl) {
+      throw new Error('rewardsDataOutputGitUrl required')
+    }
+    const git = simpleGit()
+
+    console.log('outputRepoPath:', outputRepoPath)
+
+    try {
+      await git.cwd(outputRepoPath)
+    } catch (err) {
+      console.log('clone error', err)
+    }
+
+    try {
+      console.log('rewardsDataOutputGitUrl:', rewardsDataOutputGitUrl)
       await git.addRemote('origin', rewardsDataOutputGitUrl)
     } catch (err) {
       // console.log('remote error', err)
@@ -277,7 +309,12 @@ export class Controller {
 
   async getDataFromPackage (options: any) {
     const { startTimestamp, endTimestamp } = options
-    const dbDir = path.resolve(__dirname, 'db')
+    const dbDir = path.resolve(feesDbPath, 'db')
+
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true })
+    }
+
     const refundChain = 'optimism'
     const refundPercentage = 0.5
     const merkleRewardsContractAddress = rewardsContractAddress

@@ -13,3 +13,7 @@ DATA_REPO_PATH=/tmp/rewards-data
 OUTPUT_REPO_PATH=/tmp/rewards-output
 PRIVATE_KEY=
 ```
+
+```sh
+npm run start:worker
+```

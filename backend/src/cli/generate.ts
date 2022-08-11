@@ -16,13 +16,10 @@ program
   })
 
 async function main (options: any = {}) {
-  //const startTimestamp = Number(options.previousSnapshotTimestamp)
-  //const endTimestamp = Number(options.snapshotTimestamp)
+  const startTimestamp = Number(options.previousSnapshotTimestamp) || Math.floor((Date.now()/1000) - 60 * 60)
+  const endTimestamp = Number(options.snapshotTimestamp) || Math.floor(Date.now()/1000)
 
   const controller = new Controller()
-
-  const startTimestamp = 1656110900
-  const endTimestamp = Math.floor(Date.now()/1000)
 
   console.log('startTimestamp', startTimestamp)
   console.log('endTimestamp', endTimestamp)

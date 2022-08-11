@@ -19,15 +19,21 @@ async function main () {
 
   while (true) {
     console.log('pulling rewards data')
-    const changed = await controller.pullRewardsDataFromRepo()
+    //const changed = await controller.pullRewardsDataFromRepo()
 
-    if (changed) {
+    const startTimestamp = Math.floor((Date.now()/1000) - 60 * 60)
+    const endTimestamp = Math.floor(Date.now()/1000)
+    console.log('startTimestamp:', startTimestamp)
+    console.log('endTimestamp:', endTimestamp)
+    await controller.fetchOutputRepoFirst()
+
+    //if (changed) {
       console.log('generating root')
-      await controller.generateRoot()
+      await controller.generateRoot({shouldWrite: true, startTimestamp, endTimestamp})
 
       console.log('pushing merkle data')
       await controller.pushOutputToRemoteRepo()
-    }
+    //}
 
     console.log('poll done')
     await wait(10 * 60 * 1000)

@@ -1,5 +1,5 @@
-docker:
-	docker run -p 3000:3000 hopprotocol/merkle-drop-framework
+docker-run:
+	docker run --rm --name mdf --env-file docker.env -v /tmp/dockerfeesdb:/tmp/db hopprotocol/merkle-drop-framework start:dist worker
 
 # Build docker target
 docker-build:
