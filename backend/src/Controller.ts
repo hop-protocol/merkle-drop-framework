@@ -262,6 +262,24 @@ export class Controller {
     console.log('done claiming onchain')
   }
 
+  async getRewardsForAccount (account: string) {
+    if (!outputRepoPath) {
+      throw new Error('OUTPUT_REPO_PATH is required')
+    }
+    const outDirectory = path.resolve(outputRepoPath)
+    const { root } = JSON.parse(fs.readFileSync(path.resolve(outDirectory, 'latest.json'), 'utf8'))
+    const merkleDataPath = path.resolve(outputRepoPath, root)
+    const shardedMerkleTree = ShardedMerkleTree.fromFiles(merkleDataPath)
+    const [entry, proof] = await shardedMerkleTree.getProof(account.toLowerCase())
+    if (!entry) {
+      throw new Error('no entry')
+    }
+    return {
+      balance: entry.balance,
+      proof
+    }
+  }
+
   async getClaimed (account: string) {
     const claimedAmount = await contract.withdrawn(account)
     console.log('claimed', formatUnits(claimedAmount, 18))

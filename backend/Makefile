@@ -22,3 +22,6 @@ docker-push:
 
 # Build docker image and push to AWS registry
 docker-build-and-push: docker-build docker-tag docker-push
+
+request:
+	curl "http://localhost:8000/v1/rewards?address=0xe5b64192a2ca4bec729134ad6d2524ca31a5102c"
