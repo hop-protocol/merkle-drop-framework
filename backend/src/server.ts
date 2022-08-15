@@ -43,14 +43,9 @@ app.get('/v1/rewards', async (req: any, res: any) => {
   }
 })
 
-const argv = require('minimist')(process.argv.slice(2))
-console.debug('flags:', argv)
-
-if (argv.worker) {
-  console.log('todo')
+export async function startServer () {
+  const host = '0.0.0.0'
+  app.listen(port, host, () => {
+    console.log(`Listening on port ${port}`)
+  })
 }
-
-const host = '0.0.0.0'
-app.listen(port, host, () => {
-  console.log(`Listening on port ${port}`)
-})

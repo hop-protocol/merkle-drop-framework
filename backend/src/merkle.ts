@@ -167,7 +167,11 @@ class ShardedMerkleTree {
     const path = require('path')
     const { root, shardNybbles, total } = JSON.parse(fs.readFileSync(path.join(directory, 'root.json'), { encoding: 'utf-8' }))
     return new ShardedMerkleTree((shard: any) => {
-      return JSON.parse(fs.readFileSync(path.join(directory, `${shard}.json`), { encoding: 'utf-8' }))
+      const filepath = path.join(directory, `${shard}.json`)
+      if (!fs.existsSync(filepath)) {
+        throw new Error('entry not found')
+      }
+      return JSON.parse(fs.readFileSync(filepath, 'utf8'))
     }, shardNybbles, root, BigNumber.from(total))
   }
 }

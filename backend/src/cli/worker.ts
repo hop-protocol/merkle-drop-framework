@@ -3,6 +3,7 @@ import wait from 'wait'
 import { Controller } from '../Controller'
 import { Level } from 'level'
 import { DateTime } from 'luxon'
+import { startServer } from '../server'
 
 const levelDbPath = process.env.LEVEL_DB_PATH
 
@@ -12,6 +13,7 @@ program
   .option('--start-timestamp <value>', 'Start timestamp in seconds')
   .option('--end-timestamp <value>', 'End timestamp in seconds')
   .option('--poll-interval <value>', 'Poll interval in seconds')
+  .option('--server', 'Start server')
   .action(async (source: any) => {
     try {
       await main(source)
@@ -24,6 +26,11 @@ async function main (options: any) {
   console.log('options:', options)
   const controller = new Controller()
   console.log('running worker')
+
+  if (options.server) {
+    console.log('starting server')
+    startServer()
+  }
 
   const pollInterval = (Number(options.pollInterval) || 10)
   let i = 0
