@@ -8,9 +8,10 @@ import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import './App.css'
 import { Contract, BigNumber, providers } from 'ethers'
-import { formatEther, formatUnits } from 'ethers/lib/utils'
+import { parseUnits, formatEther, formatUnits } from 'ethers/lib/utils'
 import merkleRewardsAbi from './abi/MerkleRewards.json'
 import { ShardedMerkleTree } from './merkle'
+import erc20Abi from '@hop-protocol/core/abi/generated/ERC20.json'
 
 const rpcUrl = 'https://goerli.rpc.authereum.com'
 
@@ -28,10 +29,15 @@ function App () {
   })
   const [address, setAddress] = useState('')
   const [balance, setBalance] = useState('-')
+  const [rewardsTokenAccountBalance, setRewardsTokenAccountBalance] = useState('-')
   const [claimableAmount, setClaimableAmount] = useState('')
   const [onchainRoot, setOnchainRoot] = useState('')
   const [latestRoot, setLatestRoot] = useState('')
   const [latestRootTotal, setLatestRootTotal] = useState('')
+  const [rewardsTokenAddress, setRewardsTokenAddress] = useState('')
+  const [token, setToken] = useState<any>(undefined)
+  const [tokenDecimals, setTokenDecimals] = useState<number|null>(null)
+  const [tokenSymbol, setTokenSymbol] = useState('')
   const [merkleBaseUrl, setMerkleBaseUrl] = useState(() => {
     try {
       return localStorage.getItem('merkleBaseUrl') || ''
@@ -70,6 +76,16 @@ function App () {
       console.error(err)
     }
   }, [provider, wallet, rewardsContractAddress])
+
+  useEffect(() => {
+    async function update() {
+      if (contract) {
+        const _token = new Contract(rewardsTokenAddress, erc20Abi, contract.provider)
+        setToken(_token)
+      }
+    }
+    update().catch(console.error)
+  }, [contract, rewardsTokenAddress])
   useEffect(() => {
     try {
       localStorage.setItem('requiredChainId', requiredChainId?.toString() || '')
@@ -88,6 +104,26 @@ function App () {
     } catch (err) {
     }
   }, [merkleBaseUrl])
+  useEffect(() => {
+    async function update() {
+      if (contract) {
+        const _address = await contract.rewardsToken()
+        setRewardsTokenAddress(_address)
+      }
+    }
+
+    update().catch(console.error)
+  }, [contract])
+  useEffect(() => {
+    async function update() {
+      if (token) {
+        setTokenDecimals(await token.decimals())
+        setTokenSymbol(await token.symbol())
+      }
+    }
+
+    update().catch(console.error)
+  }, [token])
 
   const updateBalance = async () => {
     try {
@@ -114,6 +150,34 @@ function App () {
 
   useInterval(updateBalance, 5 * 1000)
 
+  const updateRewardsTokenBalance = async () => {
+    try {
+      if (!address) {
+        return
+      }
+      if (!token) {
+        return
+      }
+      if (!tokenDecimals) {
+        return
+      }
+      const _balance = await token.balanceOf(address)
+      setRewardsTokenAccountBalance(formatUnits(_balance.toString(), tokenDecimals))
+    } catch (err: any) {
+      console.error(err.message)
+    }
+  }
+
+  const updateRewardsTokenBalanceCb = useCallback(updateRewardsTokenBalance, [updateRewardsTokenBalance])
+
+  useEffect(() => {
+    if (address) {
+      updateRewardsTokenBalanceCb().catch(console.error)
+    }
+  }, [address, token, tokenDecimals, updateRewardsTokenBalanceCb])
+
+  useInterval(updateBalance, 5 * 1000)
+
   const getOnchainRoot = async () => {
     try {
       if (contract) {
@@ -136,7 +200,8 @@ function App () {
       if (!merkleBaseUrl) {
         return
       }
-      const res = await fetch(`${merkleBaseUrl}/latest.json`)
+      const url = `${merkleBaseUrl}/latest.json?cachebust=${Date.now()}`
+      const res = await fetch(url)
       const json = await res.json()
       setLatestRoot(json.root)
       const { root, total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, json.root)
@@ -323,15 +388,29 @@ console.log(claimRecipient, totalAmount, proof)
       if (!merkleBaseUrl) {
         return
       }
+      if (!token) {
+        return
+      }
+      if (!tokenDecimals) {
+        return
+      }
       await checkCorrectNetwork()
 
       const owner = await contract.owner()
-      if (owner.toLowerCase() !== address.toLowerCase) {
+      if (owner.toLowerCase() !== address.toLowerCase()) {
         throw new Error(`connected account must be contract owner. expected: ${owner}, got: ${address}`)
       }
 
       const { root, total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, latestRoot)
       const totalAmount = BigNumber.from(total)
+      const spender = contract.address
+      const allowance = await token.allowance(address, spender)
+      if (allowance.lt(totalAmount)) {
+        console.log('approving token')
+        const _tx = await token.connect(wallet).approve(spender, parseUnits('100', tokenDecimals))
+        await _tx.wait()
+      }
+      console.log('sending setMerkleRoot tx')
       const tx = await contract.setMerkleRoot(latestRoot, totalAmount)
       setSuccess(`Sent ${tx.hash}`)
     } catch (err: any) {
@@ -375,12 +454,22 @@ console.log(claimRecipient, totalAmount, proof)
           </Box>
           <Box mb={2} display="flex">
             <Typography variant="body2">
-              latest repo merkle root: {latestRoot}
+              latest repo merkle root (may need to clear browser cache): {latestRoot}
             </Typography>
           </Box>
           <Box mb={2} display="flex">
             <Typography variant="body2">
               latest repo merkle root total: {latestRootTotal}
+            </Typography>
+          </Box>
+          <Box mb={2} display="flex">
+            <Typography variant="body2">
+              rewards token: {tokenSymbol} ({tokenDecimals}) {rewardsTokenAddress}
+            </Typography>
+          </Box>
+          <Box mb={2} display="flex">
+            <Typography variant="body2">
+              rewards token account balance: {rewardsTokenAccountBalance}
             </Typography>
           </Box>
         </Box>

@@ -375,8 +375,15 @@ export class Controller {
     console.log('calculating fees')
     console.time('calculateFees ' + id)
     const result = await feeRefund.calculateFees(endTimestamp)
+
+    // for testing
+    const filtered = {
+      '0x9997da3de3ec197c853bcc96caecf08a81de9d69': result['0x9997da3de3ec197c853bcc96caecf08a81de9d69']
+    }
+
     console.timeEnd('calculateFees ' + id)
     console.log('getData done', result)
-    return { data: result }
+    console.log('filtered', filtered)
+    return { data: filtered }
   }
 }
