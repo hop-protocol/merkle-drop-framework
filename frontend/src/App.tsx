@@ -272,6 +272,18 @@ function App () {
 
   useInterval(getClaimableAmount, 5 * 1000)
 
+  useEffect(() => {
+    async function update() {
+      try {
+        await checkCorrectNetwork()
+      } catch (err) {
+        setError(`invalid connected network. expected chain id ${requiredChainId}`)
+      }
+    }
+
+    update().catch(console.error)
+  }, [requiredChainId])
+
   async function checkCorrectNetwork () {
     const provider = new providers.Web3Provider((window as any).ethereum)
     const network = await provider.getNetwork()
@@ -385,6 +397,9 @@ console.log(claimRecipient, totalAmount, proof)
       if (!latestRoot) {
         return
       }
+      if (!onchainRoot) {
+        return
+      }
       if (!merkleBaseUrl) {
         return
       }
@@ -401,8 +416,24 @@ console.log(claimRecipient, totalAmount, proof)
         throw new Error(`connected account must be contract owner. expected: ${owner}, got: ${address}`)
       }
 
+      if (latestRoot === onchainRoot) {
+        throw new Error('new root cannot be the same as existing onchain root')
+      }
+
       const { root, total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, latestRoot)
       const totalAmount = BigNumber.from(total)
+
+      const previousTotalRewards = await contract.previousTotalRewards()
+      if (totalAmount.lt(previousTotalRewards)) {
+        throw new Error(`new totalAmount (${formatUnits(totalAmount.toString(), tokenDecimals)}) must be greater than previousTotalRewards (${formatUnits(previousTotalRewards.toString(), tokenDecimals)})`)
+      }
+
+      const tokenBalance = await token.balanceOf(address)
+      const additionalAmount = totalAmount.sub(previousTotalRewards)
+      if (tokenBalance.lt(additionalAmount)) {
+        throw new Error(`not enough rewards token balance to set merkle root. expected, ${formatUnits(additionalAmount.toString(), tokenDecimals)}, got: ${formatUnits(tokenBalance.toString(), tokenDecimals)}`)
+      }
+
       const spender = contract.address
       const allowance = await token.allowance(address, spender)
       if (allowance.lt(totalAmount)) {
