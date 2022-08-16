@@ -53,10 +53,10 @@ async function main (options: any) {
       try {
         let lastTimestamp: any = await db.get('lastTimestamp')
         if (lastTimestamp) {
-          lastTimestamp = Number(lastTimestamp)
-          startTimestamp = lastTimestamp + 1
-          endTimestamp = startTimestamp + pollInterval
-          console.log('got lastTimestamp')
+          //lastTimestamp = Number(lastTimestamp)
+          //startTimestamp = lastTimestamp + 1
+          //endTimestamp = startTimestamp + pollInterval
+          //console.log('got lastTimestamp')
         }
       } catch (err) {
         console.log(err.message)

@@ -13,14 +13,19 @@ import merkleRewardsAbi from './abi/MerkleRewards.json'
 import { ShardedMerkleTree } from './merkle'
 
 const rpcUrl = 'https://goerli.rpc.authereum.com'
-const requiredChainId = 5
-const networkName = 'goerli'
 
 function App () {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [claimRecipient, setClaimRecipient] = useState('')
   const [sending, setSending] = useState(false)
+  const [requiredChainId, setRequiredChainId] = useState(() => {
+    try {
+      return Number(localStorage.getItem('requiredChainId') || 5)
+    } catch (err) {
+    }
+    return 5
+  })
   const [address, setAddress] = useState('')
   const [balance, setBalance] = useState('-')
   const [claimableAmount, setClaimableAmount] = useState('')
@@ -65,6 +70,12 @@ function App () {
       console.error(err)
     }
   }, [provider, wallet, rewardsContractAddress])
+  useEffect(() => {
+    try {
+      localStorage.setItem('requiredChainId', requiredChainId?.toString() || '')
+    } catch (err) {
+    }
+  }, [requiredChainId])
   useEffect(() => {
     try {
       localStorage.setItem('rewardsContractAddress', rewardsContractAddress || '')
@@ -201,7 +212,7 @@ function App () {
     const network = await provider.getNetwork()
     const isCorrectNetwork = network.chainId === requiredChainId
     if (!isCorrectNetwork) {
-      throw new Error(`Please connect to ${networkName} network`)
+      throw new Error(`Please connect to network id ${requiredChainId}`)
     }
   }
 
@@ -314,6 +325,11 @@ console.log(claimRecipient, totalAmount, proof)
       }
       await checkCorrectNetwork()
 
+      const owner = await contract.owner()
+      if (owner.toLowerCase() !== address.toLowerCase) {
+        throw new Error(`connected account must be contract owner. expected: ${owner}, got: ${address}`)
+      }
+
       const { root, total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, latestRoot)
       const totalAmount = BigNumber.from(total)
       const tx = await contract.setMerkleRoot(latestRoot, totalAmount)
@@ -335,7 +351,7 @@ console.log(claimRecipient, totalAmount, proof)
         <Box mb={4} display="flex" flexDirection="column">
           <Box mb={2} display="flex">
             <Typography variant="body2">
-              network: {networkName}
+              required network: {requiredChainId}
             </Typography>
           </Box>
           {!!address && (
@@ -373,6 +389,13 @@ console.log(claimRecipient, totalAmount, proof)
             <Button onClick={connect} variant="contained">Connect</Button>
           </Box>
         )}
+        <Box mb={4} display="flex" flexDirection="column">
+          <Box mb={2}>
+            <TextField style={{ width: '420px' }} value={requiredChainId.toString()} onChange={(event: any) => {
+              setRequiredChainId(Number(event.target.value))
+            }} label="Contract Chain ID" placeholder="5" />
+          </Box>
+        </Box>
         <Box mb={4} display="flex" flexDirection="column">
           <Box mb={2}>
             <TextField style={{ width: '420px' }} value={rewardsContractAddress} onChange={(event: any) => {
