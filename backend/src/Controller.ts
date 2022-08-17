@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import fs from 'fs'
+import fse from 'fs-extra'
 import path from 'path'
 import globby from 'globby'
 import { ShardedMerkleTree } from './merkle'
@@ -19,6 +20,7 @@ const rewardsDataOutputGitUrl = process.env.REWARDS_DATA_OUTPUT_GIT_URL
 const dataRepoPath = process.env.DATA_REPO_PATH
 const outputRepoPath = process.env.OUTPUT_REPO_PATH
 const feesDbPath = process.env.FEES_DB_PATH || __dirname
+const outputMerklePath = process.env.OUTPUT_MERKLE_PATH
 
 if (!network) {
   throw new Error('NETWORK is required')
@@ -179,6 +181,8 @@ export class Controller {
       shouldWrite = false
     }
 
+    const writeToPath = options.writePath ?? outputRepoPath
+
     const { data } = await this.getData(options)
 
     const json: any[] = []
@@ -189,7 +193,7 @@ export class Controller {
     const shardNybbles = 2
     let outDirectory : any
     if (shouldWrite) {
-      outDirectory = path.resolve(outputRepoPath, 'data')
+      outDirectory = path.resolve(writeToPath, 'data')
       if (fs.existsSync(outDirectory) && outDirectory.startsWith('/tmp')) {
         fs.rmSync(outDirectory, { recursive: true, force: true })
       }
@@ -199,14 +203,14 @@ export class Controller {
     const rootHash = tree.getHexRoot()
 
     if (shouldWrite && rootHash !== '0x') {
-      const renamedDir = path.resolve(outputRepoPath, tree.getHexRoot())
+      const renamedDir = path.resolve(writeToPath, tree.getHexRoot())
       if (!fs.existsSync(renamedDir)) {
         fs.renameSync(outDirectory, renamedDir)
       }
       if (fs.existsSync(outDirectory) && outDirectory.startsWith('/tmp')) {
         fs.rmSync(outDirectory, { recursive: true, force: true })
       }
-      const latestFile = path.resolve(outputRepoPath, 'latest.json')
+      const latestFile = path.resolve(writeToPath, 'latest.json')
       fs.writeFileSync(latestFile, JSON.stringify({ root: rootHash }))
     }
     const onchainPreviousTotalAmount = await contract.previousTotalRewards()
@@ -263,10 +267,10 @@ export class Controller {
   }
 
   async getRewardsForAccount (account: string) {
-    if (!outputRepoPath) {
+    if (!outputMerklePath) {
       throw new Error('OUTPUT_REPO_PATH is required')
     }
-    const outDirectory = path.resolve(outputRepoPath)
+    const outDirectory = path.resolve(outputMerklePath)
     const { root } = JSON.parse(fs.readFileSync(path.resolve(outDirectory, 'latest.json'), 'utf8'))
     const merkleDataPath = path.resolve(outputRepoPath, root)
     const shardedMerkleTree = ShardedMerkleTree.fromFiles(merkleDataPath)
@@ -377,6 +381,7 @@ export class Controller {
     const result = await feeRefund.calculateFees(endTimestamp)
 
     // for testing
+    // TODO: remove when live
     const filtered = {
       '0x9997da3de3ec197c853bcc96caecf08a81de9d69': result['0x9997da3de3ec197c853bcc96caecf08a81de9d69']
     }
@@ -385,5 +390,21 @@ export class Controller {
     console.log('getData done', result)
     console.log('filtered', filtered)
     return { data: filtered }
+  }
+
+  async copyRootDataToOutputRepo (rootHash: string) {
+    const outputMerklePath = process.env.OUTPUT_MERKLE_PATH
+    if (!outputMerklePath) {
+      throw new Error('OUTPUT_REPO_PATH is required')
+    }
+
+    const folderToCopy = path.resolve(outputMerklePath, rootHash)
+    const outPath = path.resolve(outputRepoPath, rootHash)
+
+    fse.copySync(folderToCopy, outPath)
+
+    fse.copySync(path.resolve(outputMerklePath, 'latest.json'), path.resolve(outputRepoPath, 'latest.json'))
+
+    console.log('done copying')
   }
 }

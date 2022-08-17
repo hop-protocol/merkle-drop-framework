@@ -38,7 +38,7 @@
     "eslint-plugin-react-hooks": "^4.2.0"
   },
   "scripts": {
-    "dev": "BROWSER=none npm start",
+    "dev": "PORT=3001 BROWSER=none npm start",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

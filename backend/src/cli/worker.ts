@@ -6,6 +6,8 @@ import { DateTime } from 'luxon'
 import { startServer } from '../server'
 
 const levelDbPath = process.env.LEVEL_DB_PATH
+const timeLimitMs = 1 * 60 * 60 * 1000 // 1 hour
+let lastCheckpointMs = 0
 
 program
   .command('worker')
@@ -69,16 +71,28 @@ async function main (options: any) {
       console.log('endTimestamp:', endTimestamp, DateTime.fromSeconds(endTimestamp).toISO())
       await controller.fetchOutputRepoFirst()
 
+      const outputMerklePath = process.env.OUTPUT_MERKLE_PATH
+      if (!outputMerklePath) {
+        throw new Error('OUTPUT_REPO_PATH is required')
+      }
+      console.log('outputMerklePath', outputMerklePath)
       console.log('generating root and writing data to disk')
+      const writePath = outputMerklePath
       const { rootHash } = await controller.generateRoot({
         shouldWrite: true,
+        writePath,
         startTimestamp,
         endTimestamp
       })
 
-      if (rootHash !== '0x') {
+      const isExpired = lastCheckpointMs + timeLimitMs < Date.now()
+      const shouldCheckpoint = isExpired && rootHash !== '0x'
+      if (shouldCheckpoint) {
+        console.log('checkpointing')
+        await controller.copyRootDataToOutputRepo(rootHash)
         console.log('pushing merkle data from disk to repo')
         await controller.pushOutputToRemoteRepo()
+        lastCheckpointMs = Date.now()
       }
 
       await db.put('lastTimestamp', startTimestamp.toString())

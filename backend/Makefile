@@ -24,5 +24,5 @@ docker-push:
 docker-build-and-push: docker-build docker-tag docker-push
 
 request:
-	#curl "http://localhost:8000/v1/rewards?address= 0xcb43971645190ca9181f26e4f40eade20d51f39f"
-	curl "https://hop-merkle-rewards-backend.hop.exchange/v1/rewards?address=0xcb43971645190ca9181f26e4f40eade20d51f39f"
+	curl "http://localhost:8000/v1/rewards?address=0x9997da3de3ec197c853bcc96caecf08a81de9d69"
+	#curl "https://hop-merkle-rewards-backend.hop.exchange/v1/rewards?address=0x9997da3de3ec197c853bcc96caecf08a81de9d69"
