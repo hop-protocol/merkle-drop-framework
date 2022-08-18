@@ -18,3 +18,7 @@ PRIVATE_KEY=
 ```sh
 npm run start:worker
 ```
+
+Instructions to run discourse locally with Docker
+
+https://meta.discourse.org/t/beginners-guide-to-install-discourse-for-development-using-docker/102009

@@ -10,6 +10,8 @@ import { formatUnits, parseUnits } from 'ethers/lib/utils'
 import merkleRewardsAbi from './abi/MerkleRewards.json'
 import tokenAbi from './abi/ERC20.json'
 import { FeeRefund } from '@hop-protocol/fee-refund'
+import { forumPost } from './forumPost'
+import { DateTime } from 'luxon'
 
 const network = process.env.NETWORK
 const rewardsContractAddress = process.env.REWARDS_CONTRACT_ADDRESS
@@ -221,7 +223,9 @@ export class Controller {
       calldata = await contract.populateTransaction.setMerkleRoot(rootHash, total)
     }
 
-    return { rootHash, tree, total, onchainPreviousTotalAmount, calldata }
+    const totalFormatted = formatUnits(total.toString(), 18)
+
+    return { rootHash, tree, total, totalFormatted, onchainPreviousTotalAmount, calldata }
   }
 
   async setMerkleRoot (rootHash: string) {
@@ -406,5 +410,38 @@ export class Controller {
     fse.copySync(path.resolve(outputMerklePath, 'latest.json'), path.resolve(outputRepoPath, 'latest.json'))
 
     console.log('done copying')
+  }
+
+  async postToForum (data: any) {
+    const {
+      rootHash,
+      totalFormatted,
+      timestamp
+    } = data
+
+    if (!rewardsDataOutputGitUrl) {
+      throw new Error('REWARDS_DATA_OUTPUT_GIT_URL is required')
+    }
+
+    const gitUrlParts = rewardsDataOutputGitUrl.split(':')
+    const githubUrl = `https://github.com/${gitUrlParts[1]}`
+
+    const formattedDate = DateTime.fromSeconds(timestamp).toRFC2822()
+    const postTitle = `AUTOMATED: New Merkle Rewards Root ${formattedDate}`
+    const postContent = `
+    This is an automated post by the merkle rewards worker bot.
+
+    A new merkle root has been published to GitHub:
+    ${githubUrl}
+
+    Date: ${formattedDate}
+    Merkle root hash: ${rootHash}
+    Merkle root total amount: ${totalFormatted}
+    `
+
+    const response = await forumPost(postTitle, postContent)
+    console.log('forum post response', JSON.stringify(response, null, 2))
+    console.log('post url:', response.postUrl)
+    return response
   }
 }

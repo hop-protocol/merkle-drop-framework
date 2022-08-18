@@ -15,6 +15,7 @@ program
   .option('--start-timestamp <value>', 'Start timestamp in seconds')
   .option('--end-timestamp <value>', 'End timestamp in seconds')
   .option('--poll-interval <value>', 'Poll interval in seconds')
+  .option('--post-forum [boolean]', 'Set to true to post to forum')
   .option('--server', 'Start server')
   .action(async (source: any) => {
     try {
@@ -78,7 +79,7 @@ async function main (options: any) {
       console.log('outputMerklePath', outputMerklePath)
       console.log('generating root and writing data to disk')
       const writePath = outputMerklePath
-      const { rootHash } = await controller.generateRoot({
+      const { rootHash, totalFormatted } = await controller.generateRoot({
         shouldWrite: true,
         writePath,
         startTimestamp,
@@ -93,6 +94,14 @@ async function main (options: any) {
         console.log('pushing merkle data from disk to repo')
         await controller.pushOutputToRemoteRepo()
         lastCheckpointMs = Date.now()
+
+        if (options.postForum) {
+          await controller.postToForum({
+            rootHash,
+            totalFormatted,
+            timestamp: endTimestamp
+          })
+        }
       }
 
       await db.put('lastTimestamp', startTimestamp.toString())
