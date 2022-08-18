@@ -168,13 +168,16 @@ export class Controller {
 
     await git.commit('Update data')
 
+    let alreadyUpdated = false
     try {
-      await git.push('origin', 'master')
+      const res = await git.push('origin', 'master')
+      alreadyUpdated = res.pushed[0].alreadyUpdated
     } catch (err) {
       console.log('push error', err)
       throw err
     }
     console.log('done pushing merkle data')
+    return { alreadyUpdated }
   }
 
   async generateRoot (options: any = {}) {

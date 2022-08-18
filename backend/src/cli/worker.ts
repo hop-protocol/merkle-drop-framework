@@ -92,10 +92,12 @@ async function main (options: any) {
         console.log('checkpointing')
         await controller.copyRootDataToOutputRepo(rootHash)
         console.log('pushing merkle data from disk to repo')
-        await controller.pushOutputToRemoteRepo()
+        const { alreadyUpdated } = await controller.pushOutputToRemoteRepo()
         lastCheckpointMs = Date.now()
+        console.log('alreadyUpdated:', alreadyUpdated)
 
-        if (options.postForum) {
+        const shouldPost = !alreadyUpdated && options.postForum
+        if (shouldPost) {
           await controller.postToForum({
             rootHash,
             totalFormatted,
