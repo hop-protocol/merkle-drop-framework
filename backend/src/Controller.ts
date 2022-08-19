@@ -12,29 +12,7 @@ import tokenAbi from './abi/ERC20.json'
 import { FeeRefund } from '@hop-protocol/fee-refund'
 import { forumPost } from './forumPost'
 import { DateTime } from 'luxon'
-
-const network = process.env.NETWORK
-const rewardsContractAddress = process.env.REWARDS_CONTRACT_ADDRESS
-const tokenAddress = process.env.TOKEN_ADDRESS
-const privateKey = process.env.PRIVATE_KEY
-const rewardsDataGitUrl = process.env.REWARDS_DATA_GIT_URL
-const rewardsDataOutputGitUrl = process.env.REWARDS_DATA_OUTPUT_GIT_URL
-const dataRepoPath = process.env.DATA_REPO_PATH
-const outputRepoPath = process.env.OUTPUT_REPO_PATH
-const feesDbPath = process.env.FEES_DB_PATH || __dirname
-const outputMerklePath = process.env.OUTPUT_MERKLE_PATH
-
-if (!network) {
-  throw new Error('NETWORK is required')
-}
-
-if (!rewardsContractAddress) {
-  throw new Error('REWARDS_CONTRACT_ADDRESS is required')
-}
-
-if (!tokenAddress) {
-  throw new Error('TOKEN_ADDRESS is required')
-}
+import { config } from './config'
 
 const rpcUrls = {
   mainnet: process.env.ETHEREUM_RPC_URL ?? 'https://mainnet.infura.io/v3/84842078b09946638c03157f83405213', // from ethers
@@ -46,47 +24,65 @@ const rpcUrls = {
 
 console.log(rpcUrls)
 
-const provider = new providers.StaticJsonRpcProvider(rpcUrls[network])
-
-let signer : any
-if (privateKey) {
-  signer = new Wallet(privateKey, provider)
-}
-
-const signerOrProvider = signer ?? provider
-const contract = new Contract(rewardsContractAddress, merkleRewardsAbi, signerOrProvider)
-const token = new Contract(tokenAddress, tokenAbi, signerOrProvider)
-
 export class Controller {
+  network: string
+  rewardsContractAddress: string
+  contract: any
+  signer: any
+  signerOrProvider: any
+
+  constructor (network: string = config.network, rewardsContractAddress: string = config.rewardsContractAddress) {
+    if (!network) {
+      throw new Error('NETWORK is required')
+    }
+
+    if (!rewardsContractAddress) {
+      throw new Error('REWARDS_CONTRACT_ADDRESS is required')
+    }
+    const provider = new providers.StaticJsonRpcProvider(rpcUrls[network])
+
+    let signer : any
+    if (config.privateKey) {
+      signer = new Wallet(config.privateKey, provider)
+    }
+
+    const signerOrProvider = signer ?? provider
+    this.contract = new Contract(rewardsContractAddress, merkleRewardsAbi, signerOrProvider)
+    this.signer = signer
+    this.signerOrProvider = signerOrProvider
+    this.network = network
+    this.rewardsContractAddress = rewardsContractAddress
+  }
+
   async pullRewardsDataFromRepo () {
-    if (!dataRepoPath) {
+    if (!config.dataRepoPath) {
       throw new Error('DATA_REPO_PATH is required')
     }
-    if (!rewardsDataGitUrl) {
+    if (!config.rewardsDataGitUrl) {
       throw new Error('REWARDS_DATA_GIT_URL is required')
     }
-    if (!rewardsDataOutputGitUrl) {
+    if (!config.rewardsDataOutputGitUrl) {
       throw new Error('REWARDS_DATA_OUTPUT_GIT_URL is required')
     }
     const git = simpleGit()
 
-    if (!outputRepoPath) {
+    if (!config.outputRepoPath) {
       throw new Error('OUTPUT_REPO_PATH is required')
     }
 
     try {
-      await git.clone(rewardsDataOutputGitUrl, outputRepoPath)
+      await git.clone(config.rewardsDataOutputGitUrl, config.outputRepoPath)
     } catch (err) {
     }
 
     try {
-      await git.clone(rewardsDataGitUrl, dataRepoPath)
+      await git.clone(config.rewardsDataGitUrl, config.dataRepoPath)
     } catch (err) {
       // console.log('clone error', err)
     }
 
     try {
-      await git.cwd(dataRepoPath)
+      await git.cwd(config.dataRepoPath)
       await git.pull('origin', 'master')
     } catch (err) {
       console.log('pull error')
@@ -97,57 +93,57 @@ export class Controller {
   }
 
   async fetchOutputRepoFirst () {
-    if (!rewardsDataOutputGitUrl) {
+    if (!config.rewardsDataOutputGitUrl) {
       throw new Error('REWARDS_DATA_OUTPUT_GIT_URL is required')
     }
     const git = simpleGit()
 
-    if (!outputRepoPath) {
+    if (!config.outputRepoPath) {
       throw new Error('OUTPUT_REPO_PATH is required')
     }
 
     try {
-      await git.clone(rewardsDataOutputGitUrl, outputRepoPath)
+      await git.clone(config.rewardsDataOutputGitUrl, config.outputRepoPath)
     } catch (err) {
     }
 
-    console.log('outputRepoPath:', outputRepoPath)
+    console.log('outputRepoPath:', config.outputRepoPath)
 
     try {
-      await git.cwd(outputRepoPath)
+      await git.cwd(config.outputRepoPath)
     } catch (err) {
       console.log('clone error', err)
     }
 
     try {
-      console.log('rewardsDataOutputGitUrl:', rewardsDataOutputGitUrl)
-      await git.addRemote('origin', rewardsDataOutputGitUrl)
+      console.log('rewardsDataOutputGitUrl:', config.rewardsDataOutputGitUrl)
+      await git.addRemote('origin', config.rewardsDataOutputGitUrl)
     } catch (err) {
       // console.log('remote error', err)
     }
   }
 
   async pushOutputToRemoteRepo () {
-    if (!rewardsDataOutputGitUrl) {
+    if (!config.rewardsDataOutputGitUrl) {
       throw new Error('rewardsDataOutputGitUrl required')
     }
     const git = simpleGit()
 
-    if (!outputRepoPath) {
+    if (!config.outputRepoPath) {
       throw new Error('OUTPUT_REPO_PATH is required')
     }
 
-    console.log('outputRepoPath:', outputRepoPath)
+    console.log('outputRepoPath:', config.outputRepoPath)
 
     try {
-      await git.cwd(outputRepoPath)
+      await git.cwd(config.outputRepoPath)
     } catch (err) {
       console.log('clone error', err)
     }
 
     try {
-      console.log('rewardsDataOutputGitUrl:', rewardsDataOutputGitUrl)
-      await git.addRemote('origin', rewardsDataOutputGitUrl)
+      console.log('rewardsDataOutputGitUrl:', config.rewardsDataOutputGitUrl)
+      await git.addRemote('origin', config.rewardsDataOutputGitUrl)
     } catch (err) {
       // console.log('remote error', err)
     }
@@ -194,7 +190,7 @@ export class Controller {
       shouldWrite = false
     }
 
-    const writeToPath = options.writePath ?? outputRepoPath
+    const writeToPath = options.writePath ?? config.outputRepoPath
 
     const { data } = await this.getData(options)
 
@@ -226,12 +222,12 @@ export class Controller {
       const latestFile = path.resolve(writeToPath, 'latest.json')
       fs.writeFileSync(latestFile, JSON.stringify({ root: rootHash }))
     }
-    const onchainPreviousTotalAmount = await contract.previousTotalRewards()
+    const onchainPreviousTotalAmount = await this.contract.previousTotalRewards()
     // const additionalAmount = timestampRangeTotal
     console.log(rootHash)
     let calldata : any = {}
     if (rootHash !== '0x') {
-      calldata = await contract.populateTransaction.setMerkleRoot(rootHash, total)
+      calldata = await this.contract.populateTransaction.setMerkleRoot(rootHash, total)
     }
 
     const totalFormatted = formatUnits(total.toString(), 18)
@@ -239,38 +235,45 @@ export class Controller {
     return { rootHash, tree, total, totalFormatted, onchainPreviousTotalAmount, calldata }
   }
 
+  async getToken () {
+    const tokenAddress = await this.contract.rewardsToken()
+    const token = new Contract(tokenAddress, tokenAbi, this.signerOrProvider)
+    return token
+  }
+
   async setMerkleRoot (rootHash: string) {
-    const rootJsonPath = path.resolve(outputRepoPath, rootHash, 'root.json')
+    const rootJsonPath = path.resolve(config.outputRepoPath, rootHash, 'root.json')
     const { root, total } = require(rootJsonPath)
-    const owner = await signer.getAddress()
+    const owner = await this.signer.getAddress()
     console.log(root, total)
     const totalBn = BigNumber.from(total)
+    const token = await this.getToken()
     const balance = await token.balanceOf(owner)
     console.log('total', formatUnits(totalBn.toString(), 18))
     if (balance.lt(totalBn)) {
       console.log('balance', parseUnits(balance.toString(), 18))
       throw new Error('not enough balance')
     }
-    const allowance = await token.allowance(owner, rewardsContractAddress)
+    const allowance = await token.allowance(owner, this.rewardsContractAddress)
     if (allowance.lt(totalBn)) {
-      const t = await token.approve(rewardsContractAddress, constants.MaxUint256)
+      const t = await token.approve(this.rewardsContractAddress, constants.MaxUint256)
       console.log('approving', t.hash)
       await t.wait()
     }
 
     console.log('setting root')
-    const tx = await contract.setMerkleRoot(root, total)
+    const tx = await this.contract.setMerkleRoot(root, total)
     console.log('sent', tx.hash)
     await tx.wait()
     console.log('done setting root onchain')
   }
 
   async claim (root: string, account: string) {
-    if (!outputRepoPath) {
+    if (!config.outputRepoPath) {
       throw new Error('OUTPUT_REPO_PATH is required')
     }
 
-    const merkleDataPath = path.resolve(outputRepoPath, root)
+    const merkleDataPath = path.resolve(config.outputRepoPath, root)
     const shardedMerkleTree = ShardedMerkleTree.fromFiles(merkleDataPath)
     const [entry, proof] = await shardedMerkleTree.getProof(account)
     if (!entry) {
@@ -279,24 +282,24 @@ export class Controller {
     const totalAmount = BigNumber.from(entry.balance)
 
     console.log('claim')
-    const tx = await contract.claim(account, totalAmount, proof)
+    const tx = await this.contract.claim(account, totalAmount, proof)
     console.log('sent', tx.hash)
     await tx.wait()
     console.log('done claiming onchain')
   }
 
   async getRewardsForAccount (account: string) {
-    if (!outputMerklePath) {
+    if (!config.outputMerklePath) {
       throw new Error('OUTPUT_REPO_PATH is required')
     }
 
-    if (!outputRepoPath) {
+    if (!config.outputRepoPath) {
       throw new Error('OUTPUT_REPO_PATH is required')
     }
 
-    const outDirectory = path.resolve(outputMerklePath)
+    const outDirectory = path.resolve(config.outputMerklePath)
     const { root } = JSON.parse(fs.readFileSync(path.resolve(outDirectory, 'latest.json'), 'utf8'))
-    const merkleDataPath = path.resolve(outputRepoPath, root)
+    const merkleDataPath = path.resolve(config.outputRepoPath, root)
     const shardedMerkleTree = ShardedMerkleTree.fromFiles(merkleDataPath)
     const [entry, proof] = await shardedMerkleTree.getProof(account.toLowerCase())
     if (!entry) {
@@ -309,17 +312,18 @@ export class Controller {
   }
 
   async getClaimed (account: string) {
-    const claimedAmount = await contract.withdrawn(account)
+    const claimedAmount = await this.contract.withdrawn(account)
     console.log('claimed', formatUnits(claimedAmount, 18))
   }
 
   async getContractBalance () {
-    const balance = await token.balanceOf(rewardsContractAddress)
+    const token = await this.getToken()
+    const balance = await token.balanceOf(this.rewardsContractAddress)
     console.log('total', formatUnits(balance.toString(), 18))
   }
 
   async getOnchainRoot () {
-    const root = await contract.merkleRoot()
+    const root = await this.contract.merkleRoot()
     console.log('root', root)
   }
 
@@ -330,10 +334,10 @@ export class Controller {
 
   async getDataFromRepo (options: any) {
     let { startTimestamp, endTimestamp } = options
-    if (!dataRepoPath) {
+    if (!config.dataRepoPath) {
       throw new Error('DATA_REPO_PATH is required')
     }
-    const dataPath = path.resolve(dataRepoPath, 'data')
+    const dataPath = path.resolve(config.dataRepoPath, 'data')
     const paths = await globby(`${dataPath}/*`)
     let data : any = {}
     let timestampRangeTotal = BigNumber.from(0)
@@ -378,10 +382,10 @@ export class Controller {
 
   async getDataFromPackage (options: any) {
     const { startTimestamp, endTimestamp } = options
-    if (!feesDbPath) {
+    if (!config.feesDbPath) {
       throw new Error('FEES_DB_PATH is required')
     }
-    const dbDir = path.resolve(feesDbPath, 'db')
+    const dbDir = path.resolve(config.feesDbPath, 'db')
 
     if (!fs.existsSync(dbDir)) {
       fs.mkdirSync(dbDir, { recursive: true })
@@ -389,7 +393,7 @@ export class Controller {
 
     const refundChain = 'optimism'
     const refundPercentage = 0.5
-    const merkleRewardsContractAddress = rewardsContractAddress
+    const merkleRewardsContractAddress = this.rewardsContractAddress
 
     const _config = { dbDir, rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain }
     const feeRefund = new FeeRefund(_config)
@@ -422,16 +426,16 @@ export class Controller {
       throw new Error('OUTPUT_REPO_PATH is required')
     }
 
-    if (!outputRepoPath) {
+    if (!config.outputRepoPath) {
       throw new Error('OUTPUT_REPO_PATH is required')
     }
 
     const folderToCopy = path.resolve(outputMerklePath, rootHash)
-    const outPath = path.resolve(outputRepoPath, rootHash)
+    const outPath = path.resolve(config.outputRepoPath, rootHash)
 
     fse.copySync(folderToCopy, outPath)
 
-    fse.copySync(path.resolve(outputMerklePath, 'latest.json'), path.resolve(outputRepoPath, 'latest.json'))
+    fse.copySync(path.resolve(outputMerklePath, 'latest.json'), path.resolve(config.outputRepoPath, 'latest.json'))
 
     console.log('done copying')
   }
@@ -444,11 +448,11 @@ export class Controller {
       endTimestamp
     } = data
 
-    if (!rewardsDataOutputGitUrl) {
+    if (!config.rewardsDataOutputGitUrl) {
       throw new Error('REWARDS_DATA_OUTPUT_GIT_URL is required')
     }
 
-    const gitUrlParts = rewardsDataOutputGitUrl.split(':')
+    const gitUrlParts = config.rewardsDataOutputGitUrl.split(':')
     const githubUrl = `https://github.com/${gitUrlParts[1]}`
 
     const startDate = DateTime.fromSeconds(startTimestamp)
@@ -468,17 +472,13 @@ export class Controller {
     Instructions to verify merkle root:
 
     \`\`\`
-    docker run --env-file docker.env hopprotocol/merkle-drop-framework start:dist generate --start-timestamp=${startTimestamp} --end-timestamp=${endTimestamp}
-    \`\`\`
-
-    \`docker.env\`
-
-    \`\`\`
-    NETWORK=optimism
-    REWARDS_CONTRACT_ADDRESS=${rewardsContractAddress}
-    TOKEN_ADDRESS=${tokenAddress}
+    docker run hopprotocol/merkle-drop-framework start:dist generate -- --network=${this.network} --rewards-contract=${this.rewardsContractAddress} --start-timestamp=${startTimestamp} --end-timestamp=${endTimestamp}
     \`\`\`
     `
+
+    console.log('forum post:')
+    console.log(postTitle)
+    console.log(postContent)
 
     const response = await forumPost(postTitle, postContent)
     console.log('forum post response', JSON.stringify(response, null, 2))

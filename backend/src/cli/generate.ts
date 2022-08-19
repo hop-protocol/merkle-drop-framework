@@ -8,6 +8,8 @@ program
   .option('--start-timestamp <value>', 'Start timestamp in seconds')
   .option('--end-timestamp <value>', 'End timestamp in seconds')
   .option('--poll-interval <value>', 'Poll interval in seconds')
+  .option('--network <network>', 'Network chain, (ie optimism)')
+  .option('--rewards-contract <address>', 'Rewards contract address')
   .action(async (source: any) => {
     try {
       await main(source)
@@ -17,10 +19,11 @@ program
   })
 
 async function main (options: any = {}) {
+  console.log('options:', options)
   const startTimestamp = Number(options.startTimestamp) || Math.floor((Date.now()/1000) - 60 * 60)
   const endTimestamp = Number(options.endTimestamp) || Math.floor(Date.now()/1000)
 
-  const controller = new Controller()
+  const controller = new Controller(options.network, options.rewardsContract)
 
   console.log('startTimestamp', startTimestamp)
   console.log('endTimestamp', endTimestamp)

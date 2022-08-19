@@ -4,6 +4,10 @@ docker-run-worker:
 docker-run-generate:
 	docker run --env-file docker.env hopprotocol/merkle-drop-framework start:dist generate --start-timestamp=1660546800 --end-timestamp=1660860183
 
+# Pull docker image
+docker-pull:
+	docker pull hopprotocol/merkle-drop-framework
+
 # Build docker target
 docker-build:
 	docker build -f Dockerfile -t hopprotocol/merkle-drop-framework .
