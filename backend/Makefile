@@ -2,7 +2,7 @@ docker-run-worker:
 	docker stop mdf; docker rm mdf; docker run --rm --name mdf --env-file docker.env -v /tmp/dockerfeesdb:/tmp/db -v /tmp/dockerleveldb:/tmp/leveldb hopprotocol/merkle-drop-framework start:dist worker
 
 docker-run-generate:
-	docker run --env-file docker.env hopprotocol/merkle-drop-framework start:dist generate
+	docker run --env-file docker.env hopprotocol/merkle-drop-framework start:dist generate --start-timestamp=1660546800 --end-timestamp=1660860183
 
 # Build docker target
 docker-build:

@@ -16,6 +16,7 @@ program
   .option('--end-timestamp <value>', 'End timestamp in seconds')
   .option('--poll-interval <value>', 'Poll interval in seconds')
   .option('--post-forum [boolean]', 'Set to true to post to forum')
+  .option('--no-checkpoint [boolean]', 'Set to true to not push to github')
   .option('--server', 'Start server')
   .action(async (source: any) => {
     try {
@@ -36,7 +37,6 @@ async function main (options: any) {
   }
 
   const pollInterval = (Number(options.pollInterval) || 10)
-  let i = 0
 
   if (!levelDbPath) {
     throw new Error('LEVEL_DB_PATH is required')
@@ -86,8 +86,11 @@ async function main (options: any) {
         endTimestamp
       })
 
+      console.log('root:', rootHash)
+      console.log('total:', `${totalFormatted}`)
+
       const isExpired = lastCheckpointMs + timeLimitMs < Date.now()
-      const shouldCheckpoint = isExpired && rootHash !== '0x'
+      const shouldCheckpoint = !options.noCheckpoint && isExpired && rootHash !== '0x'
       if (shouldCheckpoint) {
         console.log('checkpointing')
         await controller.copyRootDataToOutputRepo(rootHash)
@@ -98,11 +101,16 @@ async function main (options: any) {
 
         const shouldPost = !alreadyUpdated && options.postForum
         if (shouldPost) {
-          await controller.postToForum({
-            rootHash,
-            totalFormatted,
-            timestamp: endTimestamp
-          })
+          try {
+            await controller.postToForum({
+              rootHash,
+              totalFormatted,
+              startTimestamp,
+              endTimestamp
+            })
+          } catch (err) {
+            console.error('post to forum failed:', err)
+          }
         }
       }
 
@@ -110,7 +118,6 @@ async function main (options: any) {
 
       console.log('poll done')
       console.log(`next poll in ${pollInterval} seconds`)
-      i++
     } catch (err) {
       console.error('poll error', err)
     }

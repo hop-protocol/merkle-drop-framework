@@ -8,7 +8,7 @@
     "start": "PORT=8000 ts-node src/index.ts",
     "start:dist": "node dist/index.js",
     "start:worker": "ts-node src/index.ts worker --server --start-timestamp=1660546800 --poll-interval=15 --post-forum",
-    "start:generate": "ts-node src/index.ts generate",
+    "start:generate": "ts-node src/index.ts generate --start-timestamp=1660546800 --end-timestamp=1660860183",
     "start:server": "ts-node src/server.ts",
     "lint": "npx eslint --ext .ts --fix src/*.ts",
     "build": "tsc",

@@ -36,16 +36,12 @@ if (!tokenAddress) {
   throw new Error('TOKEN_ADDRESS is required')
 }
 
-if (!outputRepoPath) {
-  throw new Error('OUTPUT_REPO_PATH is required')
-}
-
 const rpcUrls = {
-  mainnet: process.env.ETHEREUM_RPC_URL,
-  polygon: process.env.POLYGON_RPC_URL,
-  gnosis: process.env.GNOSIS_RPC_URL,
-  arbitrum: process.env.ARBITRUM_RPC_URL,
-  optimism: process.env.OPTIMISM_RPC_URL
+  mainnet: process.env.ETHEREUM_RPC_URL ?? 'https://mainnet.infura.io/v3/84842078b09946638c03157f83405213', // from ethers
+  polygon: process.env.POLYGON_RPC_URL ?? 'https://polygon-rpc.com',
+  gnosis: process.env.GNOSIS_RPC_URL ?? 'https://rpc.gnosischain.com',
+  arbitrum: process.env.ARBITRUM_RPC_URL ?? 'https://arb1.arbitrum.io/rpc',
+  optimism: process.env.OPTIMISM_RPC_URL ?? 'https://mainnet.optimism.io'
 }
 
 console.log(rpcUrls)
@@ -73,6 +69,10 @@ export class Controller {
       throw new Error('REWARDS_DATA_OUTPUT_GIT_URL is required')
     }
     const git = simpleGit()
+
+    if (!outputRepoPath) {
+      throw new Error('OUTPUT_REPO_PATH is required')
+    }
 
     try {
       await git.clone(rewardsDataOutputGitUrl, outputRepoPath)
@@ -102,6 +102,10 @@ export class Controller {
     }
     const git = simpleGit()
 
+    if (!outputRepoPath) {
+      throw new Error('OUTPUT_REPO_PATH is required')
+    }
+
     try {
       await git.clone(rewardsDataOutputGitUrl, outputRepoPath)
     } catch (err) {
@@ -128,6 +132,10 @@ export class Controller {
       throw new Error('rewardsDataOutputGitUrl required')
     }
     const git = simpleGit()
+
+    if (!outputRepoPath) {
+      throw new Error('OUTPUT_REPO_PATH is required')
+    }
 
     console.log('outputRepoPath:', outputRepoPath)
 
@@ -171,7 +179,7 @@ export class Controller {
     let alreadyUpdated = false
     try {
       const res = await git.push('origin', 'master')
-      alreadyUpdated = res.pushed[0].alreadyUpdated
+      alreadyUpdated = res.pushed?.[0]?.alreadyUpdated ?? false
     } catch (err) {
       console.log('push error', err)
       throw err
@@ -258,6 +266,10 @@ export class Controller {
   }
 
   async claim (root: string, account: string) {
+    if (!outputRepoPath) {
+      throw new Error('OUTPUT_REPO_PATH is required')
+    }
+
     const merkleDataPath = path.resolve(outputRepoPath, root)
     const shardedMerkleTree = ShardedMerkleTree.fromFiles(merkleDataPath)
     const [entry, proof] = await shardedMerkleTree.getProof(account)
@@ -277,6 +289,11 @@ export class Controller {
     if (!outputMerklePath) {
       throw new Error('OUTPUT_REPO_PATH is required')
     }
+
+    if (!outputRepoPath) {
+      throw new Error('OUTPUT_REPO_PATH is required')
+    }
+
     const outDirectory = path.resolve(outputMerklePath)
     const { root } = JSON.parse(fs.readFileSync(path.resolve(outDirectory, 'latest.json'), 'utf8'))
     const merkleDataPath = path.resolve(outputRepoPath, root)
@@ -405,6 +422,10 @@ export class Controller {
       throw new Error('OUTPUT_REPO_PATH is required')
     }
 
+    if (!outputRepoPath) {
+      throw new Error('OUTPUT_REPO_PATH is required')
+    }
+
     const folderToCopy = path.resolve(outputMerklePath, rootHash)
     const outPath = path.resolve(outputRepoPath, rootHash)
 
@@ -419,7 +440,8 @@ export class Controller {
     const {
       rootHash,
       totalFormatted,
-      timestamp
+      startTimestamp,
+      endTimestamp
     } = data
 
     if (!rewardsDataOutputGitUrl) {
@@ -429,17 +451,33 @@ export class Controller {
     const gitUrlParts = rewardsDataOutputGitUrl.split(':')
     const githubUrl = `https://github.com/${gitUrlParts[1]}`
 
-    const formattedDate = DateTime.fromSeconds(timestamp).toRFC2822()
-    const postTitle = `AUTOMATED: New Merkle Rewards Root ${formattedDate}`
+    const startDate = DateTime.fromSeconds(startTimestamp)
+    const endDate = DateTime.fromSeconds(endTimestamp)
+    const postTitle = `AUTOMATED: New Merkle Rewards Root ${endDate.toRFC2822()}`
     const postContent = `
     This is an automated post by the merkle rewards worker bot.
 
     A new merkle root has been published to GitHub:
     ${githubUrl}
 
-    Date: ${formattedDate}
     Merkle root hash: ${rootHash}
     Merkle root total amount: ${totalFormatted}
+    Start timestamp: ${startTimestamp} (${startDate.toISO()})
+    End timestamp: ${endTimestamp} (${endDate.toISO()})
+
+    Instructions to verify merkle root:
+
+    \`\`\`
+    docker run --env-file docker.env hopprotocol/merkle-drop-framework start:dist generate --start-timestamp=${startTimestamp} --end-timestamp=${endTimestamp}
+    \`\`\`
+
+    \`docker.env\`
+
+    \`\`\`
+    NETWORK=optimism
+    REWARDS_CONTRACT_ADDRESS=${rewardsContractAddress}
+    TOKEN_ADDRESS=${tokenAddress}
+    \`\`\`
     `
 
     const response = await forumPost(postTitle, postContent)
