@@ -1,8 +1,22 @@
-# @hop-protocol/mdf
+# Merkle drop framework backend
 
-> TODO
+> The backend worker for fetching rewards data and computing merkle data to publish to github.
 
-Env vars
+## Install
+
+```sh
+npm install @hop-protocol/mdf
+```
+
+Docker image
+
+```sh
+docker pull hopprotocol/merkle-drop-framework:latest
+```
+
+## Development
+
+Environment variables
 
 ```sh
 REWARDS_CONTRACT_ADDRESS=
@@ -15,10 +29,12 @@ OUTPUT_MERKLE_PATH=/tmp/merkle-output
 PRIVATE_KEY=
 ```
 
+Start worker
+
 ```sh
 npm run start:worker
 ```
 
-Instructions to run discourse locally with Docker
+Instructions to run discourse locally with Docker, for testing discourse auto-post:
 
-https://meta.discourse.org/t/beginners-guide-to-install-discourse-for-development-using-docker/102009
+- https://meta.discourse.org/t/beginners-guide-to-install-discourse-for-development-using-docker/102009

@@ -407,12 +407,15 @@ export class Controller {
     console.log('calculating fees')
     console.time('calculateFees ' + id)
     const result = await feeRefund.calculateFees(endTimestamp)
+    let filtered = result
 
     // for testing
     // TODO: remove when live
-    const filtered = {
+    /*
+    filtered = {
       '0x9997da3de3ec197c853bcc96caecf08a81de9d69': result['0x9997da3de3ec197c853bcc96caecf08a81de9d69']
     }
+    */
 
     console.timeEnd('calculateFees ' + id)
     console.log('getData done', result)

@@ -1,3 +1,13 @@
+# Merkle drop framework frontend
+
+> The generalized frontend for the merkle drop framework
+
+## Demo
+
+[https://mdf.netlify.app/](https://mdf.netlify.app/)
+
+---
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
