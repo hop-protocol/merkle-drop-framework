@@ -392,7 +392,7 @@ export class Controller {
     }
 
     const refundChain = 'optimism'
-    const refundPercentage = 0.5
+    const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
     const merkleRewardsContractAddress = this.rewardsContractAddress
 
     const _config = { dbDir, rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain }
@@ -407,7 +407,7 @@ export class Controller {
     console.log('calculating fees')
     console.time('calculateFees ' + id)
     const result = await feeRefund.calculateFees(endTimestamp)
-    let filtered = result
+    const filtered = result
 
     // for testing
     // TODO: remove when live
