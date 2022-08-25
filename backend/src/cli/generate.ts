@@ -28,7 +28,6 @@ async function main (options: any = {}) {
   console.log('startTimestamp', startTimestamp)
   console.log('endTimestamp', endTimestamp)
 
-  //await controller.pullRewardsDataFromRepo()
   const { tree, total, onchainPreviousTotalAmount, calldata } = await controller.generateRoot({shouldWrite: false, startTimestamp, endTimestamp})
   const rootHash = tree.getHexRoot()
   console.log('root:', rootHash)

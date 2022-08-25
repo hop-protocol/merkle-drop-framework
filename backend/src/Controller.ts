@@ -488,4 +488,36 @@ export class Controller {
     console.log('post url:', response.postUrl)
     return response
   }
+
+  async getRefundAmount (transfer: any) {
+    const startTimestamp = Math.floor(Date.now() / 1000)
+    if (!config.feesDbPath) {
+      throw new Error('FEES_DB_PATH is required')
+    }
+    const dbDir = path.resolve(config.feesDbPath, 'db')
+
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true })
+    }
+
+    const refundChain = 'optimism'
+    const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
+    const merkleRewardsContractAddress = this.rewardsContractAddress
+
+    const _config = { dbDir, rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain }
+    const feeRefund = new FeeRefund(_config)
+
+    const _transfer: any = {
+      amount: transfer.amount,
+      gasUsed: transfer.gasLimit,
+      gasPrice: transfer.gasPrice,
+      chain: transfer.chain,
+      timestamp: transfer.timestamp,
+      bonderFee: transfer.bonderFee,
+      token: transfer.token
+    }
+
+    await feeRefund.seed()
+    return feeRefund.getRefundAmount(_transfer)
+  }
 }

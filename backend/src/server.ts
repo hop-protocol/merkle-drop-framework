@@ -43,6 +43,65 @@ app.get('/v1/rewards', async (req: any, res: any) => {
   }
 })
 
+app.get('/v1/refund-amount', async (req: any, res: any) => {
+  try {
+    const {
+      gasLimit,
+      gasPrice,
+      amount,
+      token,
+      bonderFee,
+      fromChain
+    } = req.query
+
+    if (!gasLimit) {
+      throw new Error('gasLimit is required')
+    }
+
+    if (!gasPrice) {
+      throw new Error('gasPrice is required')
+    }
+
+    if (!amount) {
+      throw new Error('amount is required')
+    }
+
+    if (!token) {
+      throw new Error('token is required')
+    }
+
+    if (!bonderFee) {
+      throw new Error('bonderFee is required')
+    }
+
+    if (!fromChain) {
+      throw new Error('fromChain is required')
+    }
+
+    const controller = new Controller()
+
+    const transfer = {
+      gasLimit: gasLimit.toString(),
+      gasPrice: gasPrice.toString(),
+      timestamp: Math.floor(Date.now() / 1000),
+      amount: amount.toString(),
+      token,
+      bonderFee: bonderFee.toString(),
+      chain: fromChain.toString()
+    }
+
+    const refundAmount = await controller.getRefundAmount(transfer)
+    const data = {
+      refund: {
+        amount: refundAmount.toString()
+      }
+    }
+    res.status(200).json({ status: 'ok', data })
+  } catch (err) {
+    res.status(400).json({ error: err.message })
+  }
+})
+
 export async function startServer () {
   const host = '0.0.0.0'
   app.listen(port, host, () => {
