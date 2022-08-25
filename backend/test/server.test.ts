@@ -22,7 +22,7 @@ describe.skip('server', () => {
       amount: '1000000000000000',
       token: 'ETH',
       bonderFee: '0',
-      fromChain: 'mainnet'
+      fromChain: 'ethereum'
     }
 
     const query = new URLSearchParams(payload).toString()

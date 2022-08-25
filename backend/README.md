@@ -2,6 +2,8 @@
 
 > The backend worker for fetching rewards data and computing merkle data to publish to github.
 
+NOTE: currently it's not generalized and it's set up for the Optimism [fee refund](https://github.com/hop-protocol/fee-refund) rewards.
+
 ## Install
 
 ```sh

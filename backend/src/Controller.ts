@@ -507,6 +507,14 @@ export class Controller {
     const _config = { dbDir, rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain }
     const feeRefund = new FeeRefund(_config)
 
+    if (transfer.chain === 'ethereum') {
+      transfer.chain = 'mainnet'
+    }
+
+    if (transfer.chain === 'xdai') {
+      transfer.chain = 'gnosis'
+    }
+
     const _transfer: any = {
       amount: transfer.amount,
       gasUsed: transfer.gasLimit,

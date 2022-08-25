@@ -23,7 +23,7 @@ async function main (options: any = {}) {
     amount: '1000000000000000',
     token: 'ETH',
     bonderFee: 0,
-    chain: 'mainnet'
+    chain: 'ethereum'
   }
 
   const controller = new Controller(options.network, options.rewardsContract)
