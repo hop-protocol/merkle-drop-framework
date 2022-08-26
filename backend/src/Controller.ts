@@ -515,6 +515,22 @@ export class Controller {
       transfer.chain = 'gnosis'
     }
 
+    if (transfer.token === 'WETH') {
+      transfer.token = 'ETH'
+    }
+
+    if (transfer.token === 'XDAI') {
+      transfer.token = 'DAI'
+    }
+
+    if (transfer.token === 'WXDAI') {
+      transfer.token = 'DAI'
+    }
+
+    if (transfer.token === 'WMATIC') {
+      transfer.token = 'MATIC'
+    }
+
     const _transfer: any = {
       amount: transfer.amount,
       gasCost: transfer.gasCost,
