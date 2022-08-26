@@ -4,6 +4,7 @@ import cors from 'cors'
 import { ipRateLimitMiddleware } from './rateLimit'
 import { getAddress } from 'ethers/lib/utils'
 import { Controller } from './Controller'
+import { responseCache } from './responseCache'
 
 const app = express()
 
@@ -23,7 +24,7 @@ app.get('/health', (req: any, res: any) => {
   res.status(200).json({ status: 'ok' })
 })
 
-app.get('/v1/rewards', async (req: any, res: any) => {
+app.get('/v1/rewards', responseCache, async (req: any, res: any) => {
   try {
     let { address } = req.query
     if (!address) {
@@ -43,7 +44,7 @@ app.get('/v1/rewards', async (req: any, res: any) => {
   }
 })
 
-app.get('/v1/refund-amount', async (req: any, res: any) => {
+app.get('/v1/refund-amount', responseCache, async (req: any, res: any) => {
   try {
     const {
       gasCost,

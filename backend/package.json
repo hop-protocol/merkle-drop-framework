@@ -60,6 +60,7 @@
     "keccak256": "^1.0.6",
     "level": "^8.0.0",
     "luxon": "^3.0.1",
+    "memory-cache": "^0.2.0",
     "merkletreejs": "^0.2.31",
     "minimist": "^1.2.6",
     "mv": "^2.1.1",
