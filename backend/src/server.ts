@@ -46,6 +46,7 @@ app.get('/v1/rewards', async (req: any, res: any) => {
 app.get('/v1/refund-amount', async (req: any, res: any) => {
   try {
     const {
+      gasCost,
       gasLimit,
       gasPrice,
       amount,
@@ -54,12 +55,14 @@ app.get('/v1/refund-amount', async (req: any, res: any) => {
       fromChain
     } = req.query
 
-    if (!gasLimit) {
-      throw new Error('gasLimit is required')
-    }
+    if (!gasCost) {
+      if (!gasLimit) {
+        throw new Error('gasLimit is required')
+      }
 
-    if (!gasPrice) {
-      throw new Error('gasPrice is required')
+      if (!gasPrice) {
+        throw new Error('gasPrice is required')
+      }
     }
 
     if (!amount) {
@@ -81,8 +84,9 @@ app.get('/v1/refund-amount', async (req: any, res: any) => {
     const controller = new Controller()
 
     const transfer = {
-      gasLimit: gasLimit.toString(),
-      gasPrice: gasPrice.toString(),
+      gasCost: gasCost?.toString(),
+      gasLimit: gasLimit?.toString(),
+      gasPrice: gasPrice?.toString(),
       timestamp: Math.floor(Date.now() / 1000),
       amount: amount.toString(),
       token,

@@ -517,6 +517,7 @@ export class Controller {
 
     const _transfer: any = {
       amount: transfer.amount,
+      gasCost: transfer.gasCost,
       gasUsed: transfer.gasLimit,
       gasPrice: transfer.gasPrice,
       chain: transfer.chain,
@@ -525,7 +526,7 @@ export class Controller {
       token: transfer.token
     }
 
-    await feeRefund.seed()
-    return feeRefund.getRefundAmount(_transfer)
+    const result = await feeRefund.getRefundAmount(_transfer)
+    return result
   }
 }

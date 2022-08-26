@@ -74,7 +74,7 @@ async function main (options: any) {
 
       const outputMerklePath = process.env.OUTPUT_MERKLE_PATH
       if (!outputMerklePath) {
-        throw new Error('OUTPUT_REPO_PATH is required')
+        throw new Error('OUTPUT_MERKLE_PATH is required')
       }
       console.log('outputMerklePath', outputMerklePath)
       console.log('generating root and writing data to disk')
