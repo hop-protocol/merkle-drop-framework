@@ -545,4 +545,39 @@ export class Controller {
     const result = await feeRefund.getRefundAmount(_transfer)
     return result
   }
+
+  async getLastRepoCheckpointMs (): Promise<number> {
+    if (!config.rewardsDataOutputGitUrl) {
+      throw new Error('rewardsDataOutputGitUrl required')
+    }
+    const git = simpleGit()
+
+    if (!config.outputRepoPath) {
+      throw new Error('OUTPUT_REPO_PATH is required')
+    }
+
+    console.log('outputRepoPath:', config.outputRepoPath)
+
+    try {
+      await git.cwd(config.outputRepoPath)
+    } catch (err) {
+      console.log('clone error', err)
+    }
+
+    try {
+      console.log('rewardsDataOutputGitUrl:', config.rewardsDataOutputGitUrl)
+      await git.addRemote('origin', config.rewardsDataOutputGitUrl)
+    } catch (err) {
+      // console.log('remote error', err)
+    }
+
+    const logs = await git.log()
+    const latestLog = logs?.latest
+    if (latestLog) {
+      const date = DateTime.fromISO(latestLog.date)
+      return date.toSeconds()
+    }
+
+    return 0
+  }
 }

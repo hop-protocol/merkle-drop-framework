@@ -65,6 +65,13 @@ async function main (options: any) {
         console.log(err.message)
       }
 
+      if (!lastCheckpointMs) {
+        const lastRepoCheckpointMs = await controller.getLastRepoCheckpointMs()
+        if (lastRepoCheckpointMs) {
+          lastCheckpointMs = lastRepoCheckpointMs
+        }
+      }
+
       endTimestamp = Math.min(endTimestamp, Math.floor(Date.now() / 1000))
       startTimestamp = Math.min(startTimestamp, endTimestamp)
 
