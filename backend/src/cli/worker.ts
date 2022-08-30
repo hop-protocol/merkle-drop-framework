@@ -78,6 +78,9 @@ async function main (options: any) {
 
       console.log('startTimestamp:', startTimestamp, DateTime.fromSeconds(startTimestamp).toISO())
       console.log('endTimestamp:', endTimestamp, DateTime.fromSeconds(endTimestamp).toISO())
+      console.log('lastCheckpointMs:', lastCheckpointMs)
+      console.log('pollInterval:', pollInterval)
+      console.log('checkpointIntervalMs:', checkpointIntervalMs)
       await controller.fetchOutputRepoFirst()
 
       const outputMerklePath = process.env.OUTPUT_MERKLE_PATH

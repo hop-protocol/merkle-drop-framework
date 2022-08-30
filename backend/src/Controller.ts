@@ -559,6 +559,11 @@ export class Controller {
     console.log('outputRepoPath:', config.outputRepoPath)
 
     try {
+      await git.clone(config.rewardsDataOutputGitUrl, config.outputRepoPath)
+    } catch (err) {
+    }
+
+    try {
       await git.cwd(config.outputRepoPath)
     } catch (err) {
       console.log('clone error', err)
