@@ -6,7 +6,6 @@ import { DateTime } from 'luxon'
 import { startServer } from '../server'
 
 const levelDbPath = process.env.LEVEL_DB_PATH
-const timeLimitMs = 1 * 60 * 60 * 1000 // 1 hour
 let lastCheckpointMs = 0
 
 program
@@ -15,6 +14,7 @@ program
   .option('--start-timestamp <value>', 'Start timestamp in seconds')
   .option('--end-timestamp <value>', 'End timestamp in seconds')
   .option('--poll-interval <value>', 'Poll interval in seconds')
+  .option('--checkpoint-interval <value>', 'Checkpoint interval in seconds')
   .option('--post-forum [boolean]', 'Set to true to post to forum')
   .option('--no-checkpoint [boolean]', 'Set to true to not push to github')
   .option('--server', 'Start server')
@@ -65,15 +65,16 @@ async function main (options: any) {
         console.log(err.message)
       }
 
+      endTimestamp = Math.min(endTimestamp, Math.floor(Date.now() / 1000))
+      startTimestamp = Math.min(startTimestamp, endTimestamp)
+      const checkpointIntervalMs = (Number(options.checkpointInterval) || 1 * 60 * 60) * 1000
+
       if (!lastCheckpointMs) {
         const lastRepoCheckpointMs = await controller.getLastRepoCheckpointMs()
         if (lastRepoCheckpointMs) {
           lastCheckpointMs = lastRepoCheckpointMs
         }
       }
-
-      endTimestamp = Math.min(endTimestamp, Math.floor(Date.now() / 1000))
-      startTimestamp = Math.min(startTimestamp, endTimestamp)
 
       console.log('startTimestamp:', startTimestamp, DateTime.fromSeconds(startTimestamp).toISO())
       console.log('endTimestamp:', endTimestamp, DateTime.fromSeconds(endTimestamp).toISO())
@@ -96,7 +97,7 @@ async function main (options: any) {
       console.log('root:', rootHash)
       console.log('total:', `${totalFormatted}`)
 
-      const isExpired = lastCheckpointMs + timeLimitMs < Date.now()
+      const isExpired = lastCheckpointMs + checkpointIntervalMs < Date.now()
       const shouldCheckpoint = !options.noCheckpoint && isExpired && rootHash !== '0x'
       if (shouldCheckpoint) {
         console.log('checkpointing')
