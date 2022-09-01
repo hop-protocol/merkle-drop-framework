@@ -306,7 +306,7 @@ export class Controller {
 
     const outDirectory = path.resolve(config.outputMerklePath)
     const { root } = JSON.parse(fs.readFileSync(path.resolve(outDirectory, 'latest.json'), 'utf8'))
-    const merkleDataPath = path.resolve(config.outputRepoPath, root)
+    const merkleDataPath = path.resolve(config.outputMerklePath, root)
     const shardedMerkleTree = ShardedMerkleTree.fromFiles(merkleDataPath)
     const [entry, proof] = await shardedMerkleTree.getProof(account.toLowerCase())
     if (!entry) {

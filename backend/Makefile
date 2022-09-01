@@ -30,3 +30,6 @@ docker-build-and-push: docker-build docker-tag docker-push
 request:
 	curl "http://localhost:8000/v1/rewards?address=0x9997da3de3ec197c853bcc96caecf08a81de9d69"
 	#curl "https://hop-merkle-rewards-backend.hop.exchange/v1/rewards?address=0x9997da3de3ec197c853bcc96caecf08a81de9d69"
+
+request-refund-amount:
+	curl "http://localhost:8000/v1/refund-amount?address=0x9997da3de3ec197c853bcc96caecf08a81de9d69"
