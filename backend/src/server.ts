@@ -95,10 +95,20 @@ app.get('/v1/refund-amount', responseCache, async (req: any, res: any) => {
       chain: fromChain.toString()
     }
 
-    const refundAmount = await controller.getRefundAmount(transfer)
+    const {
+      totalUsdCost,
+      price,
+      refundAmount,
+      refundAmountAfterDiscount,
+      refundAmountAfterDiscountUsd
+    } = await controller.getRefundAmount(transfer)
     const data = {
       refund: {
-        amount: refundAmount.toString()
+        costInUsd: totalUsdCost,
+        costInRefundToken: refundAmount,
+        refundTokenPrice: price,
+        refundAmountInRefundToken: refundAmountAfterDiscount,
+        refundAmountInUsd: refundAmountAfterDiscountUsd
       }
     }
     res.status(200).json({ status: 'ok', data })

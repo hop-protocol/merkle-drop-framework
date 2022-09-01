@@ -39,7 +39,7 @@ export class Controller {
     if (!rewardsContractAddress) {
       throw new Error('REWARDS_CONTRACT_ADDRESS is required')
     }
-    const provider = new providers.StaticJsonRpcProvider(rpcUrls[network])
+    const provider = new providers.StaticJsonRpcProvider(rpcUrls[network] || rpcUrls.mainnet)
 
     let signer : any
     if (config.privateKey) {
@@ -124,6 +124,7 @@ export class Controller {
   }
 
   async pushOutputToRemoteRepo () {
+    console.log('pushOutputToRemoteRepo')
     if (!config.rewardsDataOutputGitUrl) {
       throw new Error('rewardsDataOutputGitUrl required')
     }
@@ -149,12 +150,18 @@ export class Controller {
     }
 
     try {
+      await git.checkout(['-b', 'master'])
+    } catch (err) {
+      console.log('checkout error', err.message)
+    }
+
+    try {
       const emailConfig = await git.getConfig('user.email')
-      if (!emailConfig.value) {
+      if (!emailConfig.value || process.env.GIT_USER_EMAIL) {
         await git.addConfig('user.email', process.env.GIT_USER_EMAIL, false, 'local')
       }
       const nameConfig = await git.getConfig('user.name')
-      if (!nameConfig.value) {
+      if (!nameConfig.value || process.env.GIT_USER_NAME) {
         await git.addConfig('user.name', process.env.GIT_USER_NAME, false, 'local')
       }
     } catch (err) {
@@ -222,7 +229,7 @@ export class Controller {
       const latestFile = path.resolve(writeToPath, 'latest.json')
       fs.writeFileSync(latestFile, JSON.stringify({ root: rootHash }))
     }
-    const onchainPreviousTotalAmount = await this.contract.previousTotalRewards()
+    const onchainPreviousTotalAmount = await this.contract.currentTotalRewards()
     // const additionalAmount = timestampRangeTotal
     console.log(rootHash)
     let calldata : any = {}
@@ -391,7 +398,7 @@ export class Controller {
       fs.mkdirSync(dbDir, { recursive: true })
     }
 
-    const refundChain = 'optimism'
+    const refundChain = 'optimism' // result with bee in terms of OP
     const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
     const merkleRewardsContractAddress = this.rewardsContractAddress
 
@@ -542,11 +549,26 @@ export class Controller {
       token: transfer.token
     }
 
-    const result = await feeRefund.getRefundAmount(_transfer)
-    return result
+    const {
+      totalUsdCost,
+      price,
+      refundAmount,
+      refundAmountAfterDiscount,
+      refundAmountAfterDiscountWei,
+      refundAmountAfterDiscountUsd
+    } = await feeRefund.getRefundAmount(_transfer)
+    return {
+      totalUsdCost,
+      price,
+      refundAmount,
+      refundAmountAfterDiscount,
+      refundAmountAfterDiscountWei,
+      refundAmountAfterDiscountUsd
+    }
   }
 
   async getLastRepoCheckpointMs (): Promise<number> {
+    console.log('getLastRepoCheckpointMs')
     if (!config.rewardsDataOutputGitUrl) {
       throw new Error('rewardsDataOutputGitUrl required')
     }
@@ -576,11 +598,15 @@ export class Controller {
       // console.log('remote error', err)
     }
 
-    const logs = await git.log()
-    const latestLog = logs?.latest
-    if (latestLog) {
-      const date = DateTime.fromISO(latestLog.date)
-      return date.toSeconds()
+    try {
+      const logs = await git.log()
+      const latestLog = logs?.latest
+      if (latestLog) {
+        const date = DateTime.fromISO(latestLog.date)
+        return date.toSeconds()
+      }
+    } catch (err) {
+      console.log(err.message)
     }
 
     return 0
