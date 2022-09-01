@@ -423,7 +423,7 @@ console.log(claimRecipient, totalAmount, proof)
       const { root, total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, latestRoot)
       const totalAmount = BigNumber.from(total)
 
-      const previousTotalRewards = await contract.previousTotalRewards()
+      const previousTotalRewards = await contract.currentTotalRewards()
       if (totalAmount.lt(previousTotalRewards)) {
         throw new Error(`new totalAmount (${formatUnits(totalAmount.toString(), tokenDecimals)}) must be greater than previousTotalRewards (${formatUnits(previousTotalRewards.toString(), tokenDecimals)})`)
       }
