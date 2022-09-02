@@ -38,6 +38,7 @@ function App () {
   const [token, setToken] = useState<any>(undefined)
   const [tokenDecimals, setTokenDecimals] = useState<number|null>(null)
   const [tokenSymbol, setTokenSymbol] = useState('')
+  const [newRootAdditionalAmount, setNewRootAdditionalAmount] = useState('')
   const [merkleBaseUrl, setMerkleBaseUrl] = useState(() => {
     try {
       return localStorage.getItem('merkleBaseUrl') || ''
@@ -124,6 +125,19 @@ function App () {
 
     update().catch(console.error)
   }, [token])
+  useEffect(() => {
+    async function update() {
+      if (!(contract && latestRootTotal && tokenDecimals)) {
+        setNewRootAdditionalAmount('')
+        return
+      }
+      const previousTotalRewards = Number(formatUnits(await contract.currentTotalRewards(), tokenDecimals))
+      const additionalAmount = Number(latestRootTotal) - previousTotalRewards
+      setNewRootAdditionalAmount(additionalAmount.toString())
+    }
+
+    update().catch(console.error)
+  }, [contract, latestRootTotal, tokenDecimals])
 
   const updateBalance = async () => {
     try {
@@ -200,13 +214,16 @@ function App () {
       if (!merkleBaseUrl) {
         return
       }
+      if (!tokenDecimals) {
+        return
+      }
       const url = `${merkleBaseUrl}/latest.json?cachebust=${Date.now()}`
       const res = await fetch(url)
       const json = await res.json()
       setLatestRoot(json.root)
       const { root, total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, json.root)
       if (root === json.root) {
-        setLatestRootTotal(formatUnits(total, 18))
+        setLatestRootTotal(formatUnits(total, tokenDecimals))
       }
     } catch (err) {
       console.error(err)
@@ -215,7 +232,7 @@ function App () {
 
   useEffect(() => {
     getLatestRoot().catch(console.error)
-  }, [contract, merkleBaseUrl])
+  }, [contract, merkleBaseUrl, tokenDecimals])
 
   useInterval(getLatestRoot, 5 * 1000)
 
@@ -250,6 +267,9 @@ function App () {
       if (!merkleBaseUrl) {
         return
       }
+      if (!tokenDecimals) {
+        return
+      }
       if (claimRecipient) {
         const shardedMerkleTree = await ShardedMerkleTree.fetchTree(merkleBaseUrl, onchainRoot)
         const [entry] = await shardedMerkleTree.getProof(claimRecipient)
@@ -259,7 +279,7 @@ function App () {
         const total = BigNumber.from(entry.balance)
         const withdrawn = await contract.withdrawn(claimRecipient)
         const amount = total.sub(withdrawn)
-        setClaimableAmount(formatUnits(amount, 18))
+        setClaimableAmount(formatUnits(amount, tokenDecimals))
       }
     } catch (err) {
       console.error(err)
@@ -268,7 +288,7 @@ function App () {
 
   useEffect(() => {
     getClaimableAmount().catch(console.error)
-  }, [contract, claimRecipient, onchainRoot, merkleBaseUrl])
+  }, [contract, claimRecipient, onchainRoot, merkleBaseUrl, tokenDecimals])
 
   useInterval(getClaimableAmount, 5 * 1000)
 
@@ -491,6 +511,11 @@ console.log(claimRecipient, totalAmount, proof)
           <Box mb={2} display="flex">
             <Typography variant="body2">
               latest repo merkle root total: {latestRootTotal}
+            </Typography>
+          </Box>
+          <Box mb={2} display="flex">
+            <Typography variant="body2">
+              latest repo merkle root additional amount: {newRootAdditionalAmount}
             </Typography>
           </Box>
           <Box mb={2} display="flex">
