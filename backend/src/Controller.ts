@@ -304,6 +304,7 @@ export class Controller {
       throw new Error('OUTPUT_REPO_PATH is required')
     }
 
+    const onchainRoot = await this.getOnchainRoot()
     const outDirectory = path.resolve(config.outputMerklePath)
     const { root } = JSON.parse(fs.readFileSync(path.resolve(outDirectory, 'latest.json'), 'utf8'))
     const merkleDataPath = path.resolve(config.outputMerklePath, root)
@@ -312,15 +313,39 @@ export class Controller {
     if (!entry) {
       throw new Error('no entry')
     }
+    const claimedAmount = await this.getClaimed(account)
+    const claimableAmount = await this.getClaimableForAccount(account)
+    let lockedBalance = BigNumber.from(entry.balance).sub(claimedAmount).sub(claimableAmount)
+    if (lockedBalance.lt(0) || onchainRoot === root) {
+      lockedBalance = BigNumber.from(0)
+    }
     return {
+      lockedBalance: lockedBalance.toString(),
       balance: entry.balance,
       proof
     }
   }
 
+  async getClaimableForAccount (account: string) {
+    if (!config.outputMerklePath) {
+      throw new Error('OUTPUT_REPO_PATH is required')
+    }
+
+    const root = await this.getOnchainRoot()
+    const merkleDataPath = path.resolve(config.outputRepoPath, root)
+    const shardedMerkleTree = ShardedMerkleTree.fromFiles(merkleDataPath)
+    const [entry] = await shardedMerkleTree.getProof(account.toLowerCase())
+    if (!entry) {
+      return BigNumber.from(0)
+    }
+    const claimedAmount = await this.getClaimed(account)
+    return BigNumber.from(entry.balance).sub(claimedAmount)
+  }
+
   async getClaimed (account: string) {
     const claimedAmount = await this.contract.withdrawn(account)
-    console.log('claimed', formatUnits(claimedAmount, 18))
+    // console.log('claimed', formatUnits(claimedAmount, 18))
+    return claimedAmount
   }
 
   async getContractBalance () {
@@ -331,7 +356,8 @@ export class Controller {
 
   async getOnchainRoot () {
     const root = await this.contract.merkleRoot()
-    console.log('root', root)
+    // console.log('root', root)
+    return root
   }
 
   async getData (options: any) {
@@ -398,11 +424,13 @@ export class Controller {
       fs.mkdirSync(dbDir, { recursive: true })
     }
 
-    const refundChain = 'optimism' // result with bee in terms of OP
+    const refundChain = 'optimism'
+    const token = await this.getToken()
+    const refundTokenSymbol = await token.symbol()
     const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
     const merkleRewardsContractAddress = this.rewardsContractAddress
 
-    const _config = { dbDir, rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain }
+    const _config = { dbDir, rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain, refundTokenSymbol }
     const feeRefund = new FeeRefund(_config)
 
     const id = Date.now()
@@ -508,10 +536,12 @@ export class Controller {
     }
 
     const refundChain = 'optimism'
+    const token = await this.getToken()
+    const refundTokenSymbol = await token.symbol()
     const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
     const merkleRewardsContractAddress = this.rewardsContractAddress
 
-    const _config = { dbDir, rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain }
+    const _config = { dbDir, rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain, refundTokenSymbol }
     const feeRefund = new FeeRefund(_config)
 
     if (transfer.chain === 'ethereum') {
@@ -555,7 +585,8 @@ export class Controller {
       refundAmount,
       refundAmountAfterDiscount,
       refundAmountAfterDiscountWei,
-      refundAmountAfterDiscountUsd
+      refundAmountAfterDiscountUsd,
+      refundTokenSymbol: _refundTokenSymbol
     } = await feeRefund.getRefundAmount(_transfer)
     return {
       totalUsdCost,
@@ -563,7 +594,8 @@ export class Controller {
       refundAmount,
       refundAmountAfterDiscount,
       refundAmountAfterDiscountWei,
-      refundAmountAfterDiscountUsd
+      refundAmountAfterDiscountUsd,
+      refundTokenSymbol: _refundTokenSymbol
     }
   }
 

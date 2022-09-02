@@ -4,7 +4,8 @@ import keccak256 from 'keccak256'
 import { merkleBaseUrl } from './config'
 
 function hashLeaf ([address, entry]) {
-  return utils.solidityKeccak256(['address', 'uint256'], [address, entry.balance])
+  const salt = keccak256('MERKLE_REWARDS_LEAF_HASH')
+  return utils.solidityKeccak256(['bytes32', 'address', 'uint256'], [salt, address, entry.balance])
 }
 
 export function getEntryProofIndex (address: string, entry: any, proof: any) {

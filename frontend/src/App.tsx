@@ -277,7 +277,7 @@ function App () {
       try {
         await checkCorrectNetwork()
       } catch (err) {
-        setError(`invalid connected network. expected chain id ${requiredChainId}`)
+        setError(`invalid connected network. expected chain id ${requiredChainId}. Please connect to correct network and refresh page.`)
       }
     }
 
@@ -417,7 +417,7 @@ console.log(claimRecipient, totalAmount, proof)
       }
 
       if (latestRoot === onchainRoot) {
-        throw new Error('new root cannot be the same as existing onchain root')
+        throw new Error('new root cannot be the same as existing onchain root. If you are not expecting this error then try clearing your browser cache')
       }
 
       const { root, total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, latestRoot)
