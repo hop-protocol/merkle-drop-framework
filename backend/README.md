@@ -40,3 +40,8 @@ npm run start:worker
 Instructions to run discourse locally with Docker, for testing discourse auto-post:
 
 - https://meta.discourse.org/t/beginners-guide-to-install-discourse-for-development-using-docker/102009
+
+
+To generate api key:
+
+Preferences -> Admin -> Manage Keys -> New API Key
