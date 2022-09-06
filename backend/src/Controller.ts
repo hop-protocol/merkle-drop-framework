@@ -30,6 +30,7 @@ export class Controller {
   contract: any
   signer: any
   signerOrProvider: any
+  checkpointIntervalMs: number
 
   constructor (network: string = config.network, rewardsContractAddress: string = config.rewardsContractAddress) {
     if (!network) {
@@ -624,6 +625,12 @@ export class Controller {
     }
 
     try {
+      await git.pull('origin', 'master')
+    } catch (err) {
+      console.log('pull error', err)
+    }
+
+    try {
       console.log('rewardsDataOutputGitUrl:', config.rewardsDataOutputGitUrl)
       await git.addRemote('origin', config.rewardsDataOutputGitUrl)
     } catch (err) {
@@ -633,14 +640,33 @@ export class Controller {
     try {
       const logs = await git.log()
       const latestLog = logs?.latest
+      console.log(latestLog)
       if (latestLog) {
         const date = DateTime.fromISO(latestLog.date)
-        return date.toSeconds()
+        return date.toMillis()
       }
     } catch (err) {
       console.log(err.message)
     }
 
     return 0
+  }
+
+  async getRemainingTimeTilCheckpoint () {
+    if (!this.checkpointIntervalMs) {
+      console.log('this.checkpointIntervalMs not set')
+      return (60 * 60 * 1000)
+    }
+    const lastCheckpointMs = await this.getLastRepoCheckpointMs()
+    if (!lastCheckpointMs) {
+      console.log('no lastCheckpointMs')
+      return this.checkpointIntervalMs
+    }
+    const timeTilNextCheckpointMs = this.checkpointIntervalMs - (Date.now() - lastCheckpointMs)
+    if (timeTilNextCheckpointMs < 0) {
+      console.log('timeTilNextCheckpointMs < 0', this.checkpointIntervalMs, Date.now(), lastCheckpointMs)
+      return (60 * 60 * 1000)
+    }
+    return timeTilNextCheckpointMs
   }
 }

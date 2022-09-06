@@ -1,5 +1,5 @@
 import express from 'express'
-import { port } from './config'
+import { port, config } from './config'
 import cors from 'cors'
 import { ipRateLimitMiddleware } from './rateLimit'
 import { getAddress } from 'ethers/lib/utils'
@@ -114,6 +114,23 @@ app.get('/v1/refund-amount', responseCache, async (req: any, res: any) => {
       }
     }
     res.status(200).json({ status: 'ok', data })
+  } catch (err) {
+    res.status(400).json({ error: err.message })
+  }
+})
+
+app.get('/v1/rewards-info', async (req: any, res: any) => {
+  try {
+    const controller = new Controller()
+    controller.checkpointIntervalMs = config.checkpointIntervalMs
+    const estimatedTimeMsTilCheckpoint = await controller.getRemainingTimeTilCheckpoint()
+    const estimatedDateMs = Date.now() + estimatedTimeMsTilCheckpoint
+    const data = {
+      estimatedTimeMsTilCheckpoint,
+      estimatedDateMs
+    }
+
+    res.json({ data })
   } catch (err) {
     res.status(400).json({ error: err.message })
   }

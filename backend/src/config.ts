@@ -14,5 +14,6 @@ export const config = {
   dataRepoPath: process.env.DATA_REPO_PATH,
   outputRepoPath: process.env.OUTPUT_REPO_PATH,
   feesDbPath: process.env.FEES_DB_PATH || __dirname,
-  outputMerklePath: process.env.OUTPUT_MERKLE_PATH
+  outputMerklePath: process.env.OUTPUT_MERKLE_PATH,
+  checkpointIntervalMs: 0
 }

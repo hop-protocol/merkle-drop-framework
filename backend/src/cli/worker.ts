@@ -4,6 +4,7 @@ import { Controller } from '../Controller'
 import { Level } from 'level'
 import { DateTime } from 'luxon'
 import { startServer } from '../server'
+import { config } from '../config'
 
 const levelDbPath = process.env.LEVEL_DB_PATH
 let lastCheckpointMs = 0
@@ -68,6 +69,7 @@ async function main (options: any) {
       endTimestamp = Math.min(endTimestamp, Math.floor(Date.now() / 1000))
       startTimestamp = Math.min(startTimestamp, endTimestamp)
       const checkpointIntervalMs = (Number(options.checkpointInterval) || 1 * 60 * 60) * 1000
+      config.checkpointIntervalMs = checkpointIntervalMs
 
       if (!lastCheckpointMs) {
         const lastRepoCheckpointMs = await controller.getLastRepoCheckpointMs()
