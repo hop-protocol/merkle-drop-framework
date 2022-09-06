@@ -14,16 +14,6 @@ import { forumPost } from './forumPost'
 import { DateTime } from 'luxon'
 import { config } from './config'
 
-const rpcUrls = {
-  mainnet: process.env.ETHEREUM_RPC_URL ?? 'https://mainnet.infura.io/v3/84842078b09946638c03157f83405213', // from ethers
-  polygon: process.env.POLYGON_RPC_URL ?? 'https://polygon-rpc.com',
-  gnosis: process.env.GNOSIS_RPC_URL ?? 'https://rpc.gnosischain.com',
-  arbitrum: process.env.ARBITRUM_RPC_URL ?? 'https://arb1.arbitrum.io/rpc',
-  optimism: process.env.OPTIMISM_RPC_URL ?? 'https://mainnet.optimism.io'
-}
-
-console.log(rpcUrls)
-
 export class Controller {
   network: string
   rewardsContractAddress: string
@@ -31,16 +21,37 @@ export class Controller {
   signer: any
   signerOrProvider: any
   checkpointIntervalMs: number
+  rpcUrls: any
 
   constructor (network: string = config.network, rewardsContractAddress: string = config.rewardsContractAddress) {
     if (!network) {
       throw new Error('NETWORK is required')
     }
 
+    const allRpcUrls = {
+      mainnet: {
+        mainnet: process.env.ETHEREUM_RPC_URL ?? 'https://mainnet.infura.io/v3/84842078b09946638c03157f83405213', // from ethers
+        polygon: process.env.POLYGON_RPC_URL ?? 'https://polygon-rpc.com',
+        gnosis: process.env.GNOSIS_RPC_URL ?? 'https://rpc.gnosischain.com',
+        arbitrum: process.env.ARBITRUM_RPC_URL ?? 'https://arb1.arbitrum.io/rpc',
+        optimism: process.env.OPTIMISM_RPC_URL ?? 'https://mainnet.optimism.io'
+      },
+      goerli: {
+        mainnet: process.env.ETHEREUM_RPC_URL ?? 'https://goerli.infura.io/v3/84842078b09946638c03157f83405213', // from ethers
+        polygon: process.env.POLYGON_RPC_URL ?? 'https://matic-testnet-archive-rpc.bwarelabs.com',
+        gnosis: process.env.GNOSIS_RPC_URL ?? '',
+        arbitrum: process.env.ARBITRUM_RPC_URL ?? 'https://goerli-rollup.arbitrum.io/rpc',
+        optimism: process.env.OPTIMISM_RPC_URL ?? 'https://goerli.optimism.io'
+      }
+    }
+
+    this.rpcUrls = allRpcUrls[network]
+    console.log(this.rpcUrls)
+
     if (!rewardsContractAddress) {
       throw new Error('REWARDS_CONTRACT_ADDRESS is required')
     }
-    const provider = new providers.StaticJsonRpcProvider(rpcUrls[network] || rpcUrls.mainnet)
+    const provider = new providers.StaticJsonRpcProvider(this.rpcUrls[network] || this.rpcUrls.mainnet)
 
     let signer : any
     if (config.privateKey) {
@@ -431,7 +442,7 @@ export class Controller {
     const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
     const merkleRewardsContractAddress = this.rewardsContractAddress
 
-    const _config = { dbDir, rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain, refundTokenSymbol }
+    const _config = { dbDir, rpcUrls: this.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain, refundTokenSymbol }
     const feeRefund = new FeeRefund(_config)
 
     const id = Date.now()
@@ -542,7 +553,7 @@ export class Controller {
     const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
     const merkleRewardsContractAddress = this.rewardsContractAddress
 
-    const _config = { dbDir, rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain, refundTokenSymbol }
+    const _config = { dbDir, rpcUrls: this.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain, refundTokenSymbol }
     const feeRefund = new FeeRefund(_config)
 
     if (transfer.chain === 'ethereum') {
