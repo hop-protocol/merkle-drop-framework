@@ -256,6 +256,9 @@ export class Controller {
 
   async getToken () {
     const tokenAddress = await this.contract.rewardsToken()
+    if (!tokenAddress || tokenAddress === '0x') {
+      throw new Error('rewardToken address is not set')
+    }
     const token = new Contract(tokenAddress, tokenAbi, this.signerOrProvider)
     return token
   }
