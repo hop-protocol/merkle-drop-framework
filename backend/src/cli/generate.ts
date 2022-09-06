@@ -25,6 +25,8 @@ async function main (options: any = {}) {
 
   const controller = new Controller(options.network, options.rewardsContract)
 
+  console.log('network', options.network)
+  console.log('rewardsContract', options.rewardsContract)
   console.log('startTimestamp', startTimestamp)
   console.log('endTimestamp', endTimestamp)
 

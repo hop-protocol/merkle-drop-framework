@@ -444,8 +444,9 @@ export class Controller {
     const refundTokenSymbol = await token.symbol()
     const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
     const merkleRewardsContractAddress = this.rewardsContractAddress
+    const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
 
-    const _config = { dbDir, rpcUrls: this.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain, refundTokenSymbol }
+    const _config = { network: this.network, dbDir, rpcUrls: this.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain, refundTokenSymbol, maxRefundAmount }
     const feeRefund = new FeeRefund(_config)
 
     const id = Date.now()
@@ -555,8 +556,9 @@ export class Controller {
     const refundTokenSymbol = await token.symbol()
     const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
     const merkleRewardsContractAddress = this.rewardsContractAddress
+    const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
 
-    const _config = { dbDir, rpcUrls: this.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain, refundTokenSymbol }
+    const _config = { network: this.network, dbDir, rpcUrls: this.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain, refundTokenSymbol, maxRefundAmount }
     const feeRefund = new FeeRefund(_config)
 
     if (transfer.chain === 'ethereum') {
