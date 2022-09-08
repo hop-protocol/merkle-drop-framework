@@ -20,8 +20,11 @@ program
 
 async function main (options: any = {}) {
   console.log('options:', options)
-  const startTimestamp = Number(options.startTimestamp) || Math.floor((Date.now()/1000) - 60 * 60)
-  const endTimestamp = Number(options.endTimestamp) || Math.floor(Date.now()/1000)
+  let startTimestamp = Number(options.startTimestamp) || Math.floor((Date.now()/1000) - 60 * 60)
+  let endTimestamp = Number(options.endTimestamp) || Math.floor(Date.now()/1000)
+
+  endTimestamp = Math.min(endTimestamp, Math.floor(Date.now() / 1000))
+  startTimestamp = Math.min(startTimestamp, endTimestamp)
 
   const controller = new Controller(options.network, options.rewardsContract)
 
