@@ -506,17 +506,21 @@ export class Controller {
       throw new Error('REWARDS_DATA_OUTPUT_GIT_URL is required')
     }
 
-    const gitUrlParts = config.rewardsDataOutputGitUrl.split(':')
-    const githubUrl = `https://github.com/${gitUrlParts[1]}`
+    let githubUrl = config.rewardsDataOutputGitUrl ?? ''
+    if (githubUrl.startsWith('git')) {
+      const gitUrlParts = githubUrl.split(':')
+      githubUrl = `https://github.com/${gitUrlParts[1]}`
+    }
 
     const startDate = DateTime.fromSeconds(startTimestamp)
     const endDate = DateTime.fromSeconds(endTimestamp)
     const postTitle = `AUTOMATED: New Merkle Rewards Root ${endDate.toRFC2822()}`
+    const sanitizedGithubUrl = githubUrl.replace(/ghp_.*@/g, '')
     const postContent = `
     This is an automated post by the merkle rewards worker bot.
 
     A new merkle root has been published to GitHub:
-    ${githubUrl}
+    ${sanitizedGithubUrl}
 
     Merkle root hash: ${rootHash}
     Merkle root total amount: ${totalFormatted}
