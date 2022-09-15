@@ -13,6 +13,7 @@ import { FeeRefund } from '@hop-protocol/fee-refund'
 import { forumPost } from './forumPost'
 import { DateTime } from 'luxon'
 import { config } from './config'
+import { Notifier } from './Notifier'
 
 export class Controller {
   network: string
@@ -22,6 +23,7 @@ export class Controller {
   signerOrProvider: any
   checkpointIntervalMs: number
   rpcUrls: any
+  notifier: Notifier
 
   constructor (network: string = config.network, rewardsContractAddress: string = config.rewardsContractAddress) {
     if (!network) {
@@ -64,6 +66,7 @@ export class Controller {
     this.signerOrProvider = signerOrProvider
     this.network = network
     this.rewardsContractAddress = rewardsContractAddress
+    this.notifier = new Notifier()
   }
 
   async pullRewardsDataFromRepo () {

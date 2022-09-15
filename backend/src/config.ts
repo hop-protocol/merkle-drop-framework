@@ -17,3 +17,11 @@ export const config = {
   outputMerklePath: process.env.OUTPUT_MERKLE_PATH,
   checkpointIntervalMs: 0
 }
+export const slackChannel = process.env.SLACK_CHANNEL
+export const slackWarnChannel = process.env.SLACK_WARN_CHANNEL // optional
+export const slackErrorChannel = process.env.SLACK_ERROR_CHANNEL // optional
+export const slackInfoChannel = process.env.SLACK_INFO_CHANNEL // optional
+export const slackLogChannel = process.env.SLACK_LOG_CHANNEL // optional
+export const slackSuccessChannel = process.env.SLACK_SUCCESS_CHANNEL // optional
+export const slackAuthToken = process.env.SLACK_AUTH_TOKEN
+export const slackUsername = process.env.SLACK_USERNAME ?? 'Merkle Rewards Worker'

@@ -104,6 +104,7 @@ async function main (options: any) {
 
       const isExpired = lastCheckpointMs + checkpointIntervalMs < Date.now()
       const shouldCheckpoint = !options.noCheckpoint && isExpired && rootHash !== '0x'
+      console.log('shouldCheckpoint:', shouldCheckpoint)
       if (shouldCheckpoint) {
         console.log('checkpointing')
         await controller.copyRootDataToOutputRepo(rootHash)
@@ -112,15 +113,29 @@ async function main (options: any) {
         lastCheckpointMs = Date.now()
         console.log('alreadyUpdated:', alreadyUpdated)
 
+        if (!alreadyUpdated) {
+          controller.notifier.log(`
+            Github repo updated
+            New root hash: ${rootHash}
+            New root total amount: ${totalFormatted}
+          `.trim())
+        }
         const shouldPost = !alreadyUpdated && options.postForum
+        console.log('shouldForumPost:', shouldPost)
         if (shouldPost) {
           try {
-            await controller.postToForum({
+            const { postUrl } = await controller.postToForum({
               rootHash,
               totalFormatted,
               startTimestamp,
               endTimestamp
             })
+            controller.notifier.log(`
+             Forum post created
+             Forum url: ${postUrl}
+             New root hash: ${rootHash}
+             New root total amount: ${totalFormatted}
+            `.trim())
           } catch (err) {
             console.error('post to forum failed:', err)
           }
