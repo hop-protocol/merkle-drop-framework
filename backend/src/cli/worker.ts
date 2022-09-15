@@ -109,13 +109,14 @@ async function main (options: any) {
         console.log('checkpointing')
         await controller.copyRootDataToOutputRepo(rootHash)
         console.log('pushing merkle data from disk to repo')
-        const { alreadyUpdated } = await controller.pushOutputToRemoteRepo()
+        const { alreadyUpdated, githubUrl } = await controller.pushOutputToRemoteRepo()
         lastCheckpointMs = Date.now()
         console.log('alreadyUpdated:', alreadyUpdated)
 
         if (!alreadyUpdated) {
           controller.notifier.log(`
             Github repo updated
+            Github url: ${githubUrl}
             New root hash: ${rootHash}
             New root total amount: ${totalFormatted}
           `.trim())

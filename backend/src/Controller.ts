@@ -203,7 +203,8 @@ export class Controller {
       throw err
     }
     console.log('done pushing merkle data')
-    return { alreadyUpdated }
+    const githubUrl = this.getSanitizedGithubUrl(config.rewardsDataOutputGitUrl)
+    return { alreadyUpdated, githubUrl }
   }
 
   async generateRoot (options: any = {}) {
@@ -509,16 +510,10 @@ export class Controller {
       throw new Error('REWARDS_DATA_OUTPUT_GIT_URL is required')
     }
 
-    let githubUrl = config.rewardsDataOutputGitUrl ?? ''
-    if (githubUrl.startsWith('git')) {
-      const gitUrlParts = githubUrl.split(':')
-      githubUrl = `https://github.com/${gitUrlParts[1]}`
-    }
-
     const startDate = DateTime.fromSeconds(startTimestamp)
     const endDate = DateTime.fromSeconds(endTimestamp)
     const postTitle = `AUTOMATED: New Merkle Rewards Root ${endDate.toRFC2822()}`
-    const sanitizedGithubUrl = githubUrl.replace(/ghp_.*@/g, '')
+    const sanitizedGithubUrl = this.getSanitizedGithubUrl(config.rewardsDataOutputGitUrl)
     const postContent = `
     This is an automated post by the merkle rewards worker bot.
 
@@ -676,9 +671,10 @@ export class Controller {
   }
 
   async getRemainingTimeTilCheckpoint () {
+    const defaultTimeMs = (24 * 60 * 60 * 1000)
     if (!this.checkpointIntervalMs) {
       console.log('this.checkpointIntervalMs not set')
-      return (60 * 60 * 1000)
+      return defaultTimeMs
     }
     const lastCheckpointMs = await this.getLastRepoCheckpointMs()
     if (!lastCheckpointMs) {
@@ -686,10 +682,22 @@ export class Controller {
       return this.checkpointIntervalMs
     }
     const timeTilNextCheckpointMs = this.checkpointIntervalMs - (Date.now() - lastCheckpointMs)
-    if (timeTilNextCheckpointMs < 0) {
+    if (timeTilNextCheckpointMs < defaultTimeMs) {
       console.log('timeTilNextCheckpointMs < 0', this.checkpointIntervalMs, Date.now(), lastCheckpointMs)
-      return (60 * 60 * 1000)
+      return defaultTimeMs
     }
     return timeTilNextCheckpointMs
+  }
+
+  getSanitizedGithubUrl (githubUrl: string) {
+    if (!githubUrl) {
+      githubUrl = ''
+    }
+    if (githubUrl.startsWith('git')) {
+      const gitUrlParts = githubUrl.split(':')
+      githubUrl = `https://github.com/${gitUrlParts[1]}`
+    }
+    const sanitizedGithubUrl = githubUrl.replace(/ghp_.*@/g, '')
+    return sanitizedGithubUrl
   }
 }
