@@ -338,9 +338,17 @@ export class Controller {
     if (lockedBalance.lt(0) || onchainRoot === root) {
       lockedBalance = BigNumber.from(0)
     }
+
+    const onchainShardedMerkleTree = await ShardedMerkleTree.fetchTree(config.merkleBaseUrl, onchainRoot)
+    const [onchainEntry] = await onchainShardedMerkleTree.getProof(account.toLowerCase())
+
+    const total = BigNumber.from(onchainEntry.balance)
+    const withdrawn = await this.contract.withdrawn(account)
+    const amount = total.sub(withdrawn)
+
     return {
       lockedBalance: lockedBalance.toString(),
-      balance: entry.balance,
+      balance: amount,
       proof
     }
   }

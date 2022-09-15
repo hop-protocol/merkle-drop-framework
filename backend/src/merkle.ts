@@ -1,7 +1,6 @@
 import { utils, BigNumber } from 'ethers'
 import { MerkleTree } from 'merkletreejs'
 import keccak256 from 'keccak256'
-import { merkleBaseUrl } from './config'
 
 function hashLeaf ([address, entry]) {
   const salt = keccak256('MERKLE_REWARDS_LEAF_HASH')
@@ -131,8 +130,8 @@ class ShardedMerkleTree {
     return { tree, total }
   }
 
-  static async fetchRootFile () {
-    const url = `${merkleBaseUrl}/root.json`
+  static async fetchRootFile (merkleBaseUrl: string, rootHash: string) {
+    const url = `${merkleBaseUrl}/${rootHash}/root.json`
     const res = await fetch(url)
     const rootFile = await res.json()
     if (!rootFile.root) {
@@ -146,11 +145,11 @@ class ShardedMerkleTree {
     }
   }
 
-  static async fetchTree () {
-    const { root, shardNybbles, total } = await ShardedMerkleTree.fetchRootFile()
+  static async fetchTree (merkleBaseUrl: string, rootHash: string) {
+    const { root, shardNybbles, total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, rootHash)
     return new ShardedMerkleTree(
       async (shard: any) => {
-        const url = `${merkleBaseUrl}/${shard}.json`
+        const url = `${merkleBaseUrl}/${rootHash}/${shard}.json`
         const res = await fetch(url)
         if (res.status === 404) {
           throw new Error('Invalid Entry')

@@ -40,6 +40,7 @@ app.get('/v1/rewards', responseCache, async (req: any, res: any) => {
     }
     res.status(200).json({ status: 'ok', data })
   } catch (err) {
+    console.error('request error:', err)
     res.status(400).json({ error: err.message })
   }
 })
@@ -115,6 +116,7 @@ app.get('/v1/refund-amount', responseCache, async (req: any, res: any) => {
     }
     res.status(200).json({ status: 'ok', data })
   } catch (err) {
+    console.error('request error:', err)
     res.status(400).json({ error: err.message })
   }
 })
@@ -132,6 +134,7 @@ app.get('/v1/rewards-info', async (req: any, res: any) => {
 
     res.json({ data })
   } catch (err) {
+    console.error('request error:', err)
     res.status(400).json({ error: err.message })
   }
 })

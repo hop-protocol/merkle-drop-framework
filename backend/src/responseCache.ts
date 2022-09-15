@@ -1,6 +1,6 @@
 import mcache from 'memory-cache'
 
-const durationMs = 30 * 1000
+const durationMs = 10 * 1000
 
 export function responseCache (req: any, res: any, next: any) {
   const urlKey = req.originalUrl || req.url

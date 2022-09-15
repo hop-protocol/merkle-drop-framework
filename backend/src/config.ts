@@ -1,4 +1,3 @@
-export const merkleBaseUrl = ''
 export const port = Number(process.env.PORT || 8000)
 export const ipRateLimitReqPerSec = Number(process.env.IP_RATE_LIMIT_REQ_PER_SEC || 100)
 export const ipRateLimitWindowMs = Number(process.env.IP_RATE_LIMIT_WINDOW_MS || 1 * 1000)
@@ -15,7 +14,8 @@ export const config = {
   outputRepoPath: process.env.OUTPUT_REPO_PATH,
   feesDbPath: process.env.FEES_DB_PATH || __dirname,
   outputMerklePath: process.env.OUTPUT_MERKLE_PATH,
-  checkpointIntervalMs: 0
+  checkpointIntervalMs: 0,
+  merkleBaseUrl: process.env.MERKLE_BASE_URL
 }
 export const slackChannel = process.env.SLACK_CHANNEL
 export const slackWarnChannel = process.env.SLACK_WARN_CHANNEL // optional
