@@ -1,12 +1,11 @@
 import mcache from 'memory-cache'
-
-const durationMs = 10 * 1000
+import { disableResponseCache, responseCacheDurationMs } from './config'
 
 export function responseCache (req: any, res: any, next: any) {
   const urlKey = req.originalUrl || req.url
   const key = `__express__${urlKey}`
   const cachedBody = mcache.get(key)
-  if (cachedBody) {
+  if (cachedBody && !disableResponseCache) {
     console.log('cache hit:', key)
     res.send(cachedBody)
     return
@@ -18,7 +17,7 @@ export function responseCache (req: any, res: any, next: any) {
       const parsed = JSON.parse(body)
       if (parsed.data) {
         console.log('cached:', key)
-        mcache.put(key, body, durationMs)
+        mcache.put(key, body, responseCacheDurationMs)
       }
     } catch (err) { }
     res.sendResponse(body)

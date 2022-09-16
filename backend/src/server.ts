@@ -3,8 +3,8 @@ import { port, config } from './config'
 import cors from 'cors'
 import { ipRateLimitMiddleware } from './rateLimit'
 import { getAddress } from 'ethers/lib/utils'
-import { Controller } from './Controller'
 import { responseCache } from './responseCache'
+import { controller } from './instance'
 
 const app = express()
 
@@ -32,7 +32,6 @@ app.get('/v1/rewards', responseCache, async (req: any, res: any) => {
     }
     address = getAddress(address)
     console.log('address:', address)
-    const controller = new Controller()
     const rewards = await controller.getRewardsForAccount(address)
     const data = {
       address,
@@ -83,8 +82,6 @@ app.get('/v1/refund-amount', responseCache, async (req: any, res: any) => {
       throw new Error('fromChain is required')
     }
 
-    const controller = new Controller()
-
     const transfer = {
       gasCost: gasCost?.toString(),
       gasLimit: gasLimit?.toString(),
@@ -123,7 +120,6 @@ app.get('/v1/refund-amount', responseCache, async (req: any, res: any) => {
 
 app.get('/v1/rewards-info', async (req: any, res: any) => {
   try {
-    const controller = new Controller()
     controller.checkpointIntervalMs = config.checkpointIntervalMs
     const estimatedTimeMsTilCheckpoint = await controller.getRemainingTimeTilCheckpoint()
     const estimatedDateMs = Date.now() + estimatedTimeMsTilCheckpoint

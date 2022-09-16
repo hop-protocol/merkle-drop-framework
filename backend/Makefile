@@ -27,12 +27,15 @@ docker-push:
 # Build docker image and push to AWS registry
 docker-build-and-push: docker-build docker-tag docker-push
 
-request:
+request-rewards:
 	curl "http://localhost:8000/v1/rewards?address=0x9997da3de3ec197c853bcc96caecf08a81de9d69"
 	#curl "https://hop-merkle-rewards-backend.hop.exchange/v1/rewards?address=0x9997da3de3ec197c853bcc96caecf08a81de9d69"
 
 request-refund-amount:
-	curl "http://localhost:8000/v1/refund-amount?address=0x9997da3de3ec197c853bcc96caecf08a81de9d69"
+	curl "http://localhost:8000/v1/refund-amount?gasLimit=144561&gasPrice=9408027411&amount=1000000000000000&token=ETH&bonderFee=0&fromChain=ethereum"
 
 request-rewards-info:
 	curl "http://localhost:8000/v1/rewards-info"
+
+bench:
+	(cd loadtest && ./bench.sh)

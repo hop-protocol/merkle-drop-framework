@@ -1,6 +1,6 @@
 import fetch from 'isomorphic-fetch'
 
-describe.skip('server', () => {
+describe('server', () => {
   it('return rewards amount', async () => {
     const payload = {
       address: '0x9997da3de3ec197c853bcc96caecf08a81de9d69'
@@ -12,6 +12,7 @@ describe.skip('server', () => {
     const res = await fetch(url)
     const json = await res.json()
     console.log(json)
+    expect(json.data.rewards.lockedBalance).toBeTruthy()
     expect(json.data.rewards.balance).toBeTruthy()
     expect(json.data.rewards.proof).toBeTruthy()
   })
@@ -31,6 +32,16 @@ describe.skip('server', () => {
     const res = await fetch(url)
     const json = await res.json()
     console.log(json)
-    expect(json.data.refund.amount).toBeTruthy()
+    expect(json.data.refund.refundAmountInRefundToken).toBeTruthy()
+    expect(json.data.refund.refundAmountInUsd).toBeTruthy()
+    expect(json.data.refund.refundTokenSymbol).toBeTruthy()
+  })
+  it('return rewards info', async () => {
+    const url = 'http://localhost:8000/v1/rewards-info'
+    console.log(url)
+    const res = await fetch(url)
+    const json = await res.json()
+    console.log(json)
+    expect(json.data.estimatedDateMs).toBeTruthy()
   })
 })

@@ -1,10 +1,10 @@
 import { program } from 'commander'
 import wait from 'wait'
-import { Controller } from '../Controller'
 import { Level } from 'level'
 import { DateTime } from 'luxon'
 import { startServer } from '../server'
 import { config } from '../config'
+import { controller } from '../instance'
 
 const levelDbPath = process.env.LEVEL_DB_PATH
 let lastCheckpointMs = 0
@@ -29,7 +29,6 @@ program
 
 async function main (options: any) {
   console.log('options:', options)
-  const controller = new Controller()
   console.log('running worker')
 
   if (options.server) {

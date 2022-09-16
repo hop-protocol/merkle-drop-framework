@@ -24,6 +24,15 @@ export class Controller {
   checkpointIntervalMs: number
   rpcUrls: any
   notifier: Notifier
+  rewardsDataOutputGit : any
+  lastPull : any = {}
+  tokenAddress: string
+  tokenSymbol: string
+  tokenContract: Contract
+  lastCheckpointMs = 0
+  lastCheckpointMsCheckExpiresAt = 0
+  onchainRoot: any
+  onchainRootCheckExpiresAt: any
 
   constructor (network: string = config.network, rewardsContractAddress: string = config.rewardsContractAddress) {
     if (!network) {
@@ -86,12 +95,16 @@ export class Controller {
     }
 
     try {
-      await git.clone(config.rewardsDataOutputGitUrl, config.outputRepoPath)
+      if (!fs.existsSync(path.resolve(config.outputRepoPath, '.git'))) {
+        await git.clone(config.rewardsDataOutputGitUrl, config.outputRepoPath)
+      }
     } catch (err) {
     }
 
     try {
-      await git.clone(config.rewardsDataGitUrl, config.dataRepoPath)
+      if (!fs.existsSync(path.resolve(config.dataRepoPath, '.git'))) {
+        await git.clone(config.rewardsDataGitUrl, config.dataRepoPath)
+      }
     } catch (err) {
       // console.log('clone error', err)
     }
@@ -111,14 +124,19 @@ export class Controller {
     if (!config.rewardsDataOutputGitUrl) {
       throw new Error('REWARDS_DATA_OUTPUT_GIT_URL is required')
     }
-    const git = simpleGit()
+    const git = this.rewardsDataOutputGit ?? simpleGit()
+    if (!this.rewardsDataOutputGit) {
+      this.rewardsDataOutputGit = git
+    }
 
     if (!config.outputRepoPath) {
       throw new Error('OUTPUT_REPO_PATH is required')
     }
 
     try {
-      await git.clone(config.rewardsDataOutputGitUrl, config.outputRepoPath)
+      if (!fs.existsSync(path.resolve(config.outputRepoPath, '.git'))) {
+        await git.clone(config.rewardsDataOutputGitUrl, config.outputRepoPath)
+      }
     } catch (err) {
     }
 
@@ -132,7 +150,10 @@ export class Controller {
 
     try {
       console.log('rewardsDataOutputGitUrl:', config.rewardsDataOutputGitUrl)
-      await git.addRemote('origin', config.rewardsDataOutputGitUrl)
+      const gitConfig = await git.listConfig('local')
+      if (gitConfig?.values?.['.git/config']?.['remote.origin.url'] !== config.rewardsDataOutputGitUrl) {
+        await git.addRemote('origin', config.rewardsDataOutputGitUrl)
+      }
     } catch (err) {
       // console.log('remote error', err)
     }
@@ -143,7 +164,10 @@ export class Controller {
     if (!config.rewardsDataOutputGitUrl) {
       throw new Error('rewardsDataOutputGitUrl required')
     }
-    const git = simpleGit()
+    const git = this.rewardsDataOutputGit ?? simpleGit()
+    if (!this.rewardsDataOutputGit) {
+      this.rewardsDataOutputGit = git
+    }
 
     if (!config.outputRepoPath) {
       throw new Error('OUTPUT_REPO_PATH is required')
@@ -159,7 +183,10 @@ export class Controller {
 
     try {
       console.log('rewardsDataOutputGitUrl:', config.rewardsDataOutputGitUrl)
-      await git.addRemote('origin', config.rewardsDataOutputGitUrl)
+      const gitConfig = await git.getConfig('local')
+      if (gitConfig?.values?.['.git/config']?.['remote.origin.url'] !== config.rewardsDataOutputGitUrl) {
+        await git.addRemote('origin', config.rewardsDataOutputGitUrl)
+      }
     } catch (err) {
       // console.log('remote error', err)
     }
@@ -258,13 +285,32 @@ export class Controller {
     return { rootHash, tree, total, totalFormatted, onchainPreviousTotalAmount, calldata }
   }
 
-  async getToken () {
-    const tokenAddress = await this.contract.rewardsToken()
+  async getToken (): Promise<Contract> {
+    if (this.tokenContract) {
+      return this.tokenContract
+    }
+    const tokenAddress = this.tokenAddress || await this.contract.rewardsToken()
     if (!tokenAddress || tokenAddress === '0x') {
       throw new Error('rewardToken address is not set')
     }
+    if (!this.tokenAddress) {
+      this.tokenAddress = tokenAddress
+    }
     const token = new Contract(tokenAddress, tokenAbi, this.signerOrProvider)
+    this.tokenContract = token
     return token
+  }
+
+  async getTokenSymbol () {
+    if (this.tokenSymbol) {
+      return this.tokenSymbol
+    }
+    const token = await this.getToken()
+    const refundTokenSymbol = await token.symbol()
+    if (!this.tokenSymbol) {
+      this.tokenSymbol = refundTokenSymbol
+    }
+    return refundTokenSymbol
   }
 
   async setMerkleRoot (rootHash: string) {
@@ -332,8 +378,7 @@ export class Controller {
     if (!entry) {
       throw new Error('no entry')
     }
-    const claimedAmount = await this.getClaimed(account)
-    const claimableAmount = await this.getClaimableForAccount(account)
+    const [claimedAmount, claimableAmount] = await Promise.all([this.getClaimed(account), this.getClaimableForAccount(account)])
     let lockedBalance = BigNumber.from(entry.balance).sub(claimedAmount).sub(claimableAmount)
     if (lockedBalance.lt(0) || onchainRoot === root) {
       lockedBalance = BigNumber.from(0)
@@ -348,7 +393,7 @@ export class Controller {
 
     return {
       lockedBalance: lockedBalance.toString(),
-      balance: amount,
+      balance: amount.toString(),
       proof
     }
   }
@@ -382,7 +427,16 @@ export class Controller {
   }
 
   async getOnchainRoot () {
+    const cached = this.onchainRoot && this.onchainRootCheckExpiresAt && this.onchainRootCheckExpiresAt < Date.now()
+    if (cached) {
+      return this.onchainRoot
+    }
+
     const root = await this.contract.merkleRoot()
+
+    this.onchainRoot = root
+    this.onchainRootCheckExpiresAt = Date.now() + (5 * 1000)
+
     // console.log('root', root)
     return root
   }
@@ -452,8 +506,7 @@ export class Controller {
     }
 
     const refundChain = 'optimism'
-    const token = await this.getToken()
-    const refundTokenSymbol = await token.symbol()
+    const refundTokenSymbol = await this.getTokenSymbol()
     const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
     const merkleRewardsContractAddress = this.rewardsContractAddress
     const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
@@ -562,8 +615,7 @@ export class Controller {
     }
 
     const refundChain = 'optimism'
-    const token = await this.getToken()
-    const refundTokenSymbol = await token.symbol()
+    const refundTokenSymbol = await this.getTokenSymbol()
     const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
     const merkleRewardsContractAddress = this.rewardsContractAddress
     const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
@@ -628,10 +680,20 @@ export class Controller {
 
   async getLastRepoCheckpointMs (): Promise<number> {
     console.log('getLastRepoCheckpointMs')
+
+    const cached = this.lastCheckpointMs && this.lastCheckpointMsCheckExpiresAt && this.lastCheckpointMsCheckExpiresAt < Date.now()
+    if (cached) {
+      return this.lastCheckpointMs
+    }
+
     if (!config.rewardsDataOutputGitUrl) {
       throw new Error('rewardsDataOutputGitUrl required')
     }
-    const git = simpleGit()
+
+    const git = this.rewardsDataOutputGit ?? simpleGit()
+    if (!this.rewardsDataOutputGit) {
+      this.rewardsDataOutputGit = git
+    }
 
     if (!config.outputRepoPath) {
       throw new Error('OUTPUT_REPO_PATH is required')
@@ -640,7 +702,9 @@ export class Controller {
     console.log('outputRepoPath:', config.outputRepoPath)
 
     try {
-      await git.clone(config.rewardsDataOutputGitUrl, config.outputRepoPath)
+      if (!fs.existsSync(path.resolve(config.outputRepoPath, '.git'))) {
+        await git.clone(config.rewardsDataOutputGitUrl, config.outputRepoPath)
+      }
     } catch (err) {
     }
 
@@ -651,31 +715,44 @@ export class Controller {
     }
 
     try {
-      await git.pull('origin', 'master')
+      const shouldPull = !this.lastPull.rewardsDataOutputGitUrl || (this.lastPull.rewardsDataOutputGitUrl + (10 * 1000)) < Date.now()
+      if (shouldPull) {
+        await git.pull('origin', 'master')
+        this.lastPull.rewardsDataOutputGitUrl = Date.now()
+      }
     } catch (err) {
       console.log('pull error', err)
     }
 
     try {
+      const gitConfig = await git.listConfig('local')
       console.log('rewardsDataOutputGitUrl:', config.rewardsDataOutputGitUrl)
-      await git.addRemote('origin', config.rewardsDataOutputGitUrl)
+      if (gitConfig?.values?.['.git/config']?.['remote.origin.url'] !== config.rewardsDataOutputGitUrl) {
+        await git.addRemote('origin', config.rewardsDataOutputGitUrl)
+      }
     } catch (err) {
       // console.log('remote error', err)
     }
 
+    let lastCheckpointMs = 0
     try {
       const logs = await git.log()
       const latestLog = logs?.latest
       console.log(latestLog)
       if (latestLog) {
         const date = DateTime.fromISO(latestLog.date)
-        return date.toMillis()
+        const millis = date.toMillis()
+        if (millis) {
+          lastCheckpointMs = millis
+        }
       }
     } catch (err) {
       console.log(err.message)
     }
 
-    return 0
+    this.lastCheckpointMs = lastCheckpointMs
+    this.lastCheckpointMsCheckExpiresAt = Date.now() + (5 * 1000)
+    return lastCheckpointMs
   }
 
   async getRemainingTimeTilCheckpoint () {
