@@ -33,6 +33,10 @@ export class Controller {
   lastCheckpointMsCheckExpiresAt = 0
   onchainRoot: any
   onchainRootCheckExpiresAt: any
+  withdrawnCache : any = {}
+  withdrawnCacheCheckExpiresAt :any = {}
+  shardedMerkleTreeCache: any = {}
+  shardedMerkleTreeProofCache: any = {}
 
   constructor (network: string = config.network, rewardsContractAddress: string = config.rewardsContractAddress) {
     if (!network) {
@@ -384,14 +388,27 @@ export class Controller {
       lockedBalance = BigNumber.from(0)
     }
 
-    const onchainShardedMerkleTree = await ShardedMerkleTree.fetchTree(config.merkleBaseUrl, onchainRoot)
-    const [onchainEntry] = await onchainShardedMerkleTree.getProof(account.toLowerCase())
+    account = account.toLowerCase()
+    const onchainShardedMerkleTree = this.shardedMerkleTreeCache[onchainRoot] ?? await ShardedMerkleTree.fetchTree(config.merkleBaseUrl, onchainRoot)
+    const proofData = this.shardedMerkleTreeProofCache[onchainRoot]?.[account] ?? await onchainShardedMerkleTree.getProof(account)
+    const [onchainEntry] = proofData
+
+    if (!this.shardedMerkleTreeCache[onchainRoot]) {
+      this.shardedMerkleTreeCache[onchainRoot] = onchainShardedMerkleTree
+    }
+    if (!this.shardedMerkleTreeProofCache[onchainRoot]) {
+      this.shardedMerkleTreeProofCache[onchainRoot] = {}
+    }
+    if (!this.shardedMerkleTreeProofCache[onchainRoot][account]) {
+      this.shardedMerkleTreeProofCache[onchainRoot][account] = proofData
+    }
 
     const total = BigNumber.from(onchainEntry.balance)
-    const withdrawn = await this.contract.withdrawn(account)
+    const withdrawn = await this.getWithdrawn(account)
     const amount = total.sub(withdrawn)
 
     return {
+      account,
       lockedBalance: lockedBalance.toString(),
       balance: amount.toString(),
       proof
@@ -414,8 +431,23 @@ export class Controller {
     return BigNumber.from(entry.balance).sub(claimedAmount)
   }
 
+  async getWithdrawn (account: string) {
+    account = account.toLowerCase()
+    const cached = this.withdrawnCache[account] && this.withdrawnCacheCheckExpiresAt[account] && this.withdrawnCacheCheckExpiresAt[account] > Date.now()
+    if (cached) {
+      return this.withdrawnCache[account]
+    }
+
+    const withdrawn = await this.contract.withdrawn(account)
+
+    this.withdrawnCache[account] = withdrawn
+    this.withdrawnCacheCheckExpiresAt[account] = Date.now() + (5 * 1000)
+
+    return withdrawn
+  }
+
   async getClaimed (account: string) {
-    const claimedAmount = await this.contract.withdrawn(account)
+    const claimedAmount = await this.getWithdrawn(account)
     // console.log('claimed', formatUnits(claimedAmount, 18))
     return claimedAmount
   }
@@ -427,7 +459,7 @@ export class Controller {
   }
 
   async getOnchainRoot () {
-    const cached = this.onchainRoot && this.onchainRootCheckExpiresAt && this.onchainRootCheckExpiresAt < Date.now()
+    const cached = this.onchainRoot && this.onchainRootCheckExpiresAt && this.onchainRootCheckExpiresAt > Date.now()
     if (cached) {
       return this.onchainRoot
     }
@@ -681,7 +713,7 @@ export class Controller {
   async getLastRepoCheckpointMs (): Promise<number> {
     console.log('getLastRepoCheckpointMs')
 
-    const cached = this.lastCheckpointMs && this.lastCheckpointMsCheckExpiresAt && this.lastCheckpointMsCheckExpiresAt < Date.now()
+    const cached = this.lastCheckpointMs && this.lastCheckpointMsCheckExpiresAt && this.lastCheckpointMsCheckExpiresAt > Date.now()
     if (cached) {
       return this.lastCheckpointMs
     }
