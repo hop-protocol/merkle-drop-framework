@@ -4,6 +4,8 @@ build
 *.log
 *.zip
 *.env
+.env.*
+*.env.*
 generated
 data
 input.json

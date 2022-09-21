@@ -10,6 +10,7 @@ program
   .option('--poll-interval <value>', 'Poll interval in seconds')
   .option('--network <network>', 'Network chain, (ie optimism)')
   .option('--rewards-contract <address>', 'Rewards contract address')
+  .option('--rewards-contract-network <network>', 'Rewards contract network')
   .action(async (source: any) => {
     try {
       await main(source)
@@ -26,7 +27,7 @@ async function main (options: any = {}) {
   endTimestamp = Math.min(endTimestamp, Math.floor(Date.now() / 1000))
   startTimestamp = Math.min(startTimestamp, endTimestamp)
 
-  const controller = new Controller(options.network, options.rewardsContract)
+  const controller = new Controller(options.network, options.rewardsContract, options.rewardsContractNetwork)
 
   console.log('network', options.network)
   console.log('rewardsContract', options.rewardsContract)

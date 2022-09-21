@@ -10,6 +10,7 @@ export const responseCacheDurationMs = Number(process.env.RESPONSE_CACHE_DURATIO
 export const config = {
   network: process.env.NETWORK,
   rewardsContractAddress: process.env.REWARDS_CONTRACT_ADDRESS,
+  rewardsContractNetwork: process.env.REWARDS_CONTRACT_NETWORK || 'mainnet',
   privateKey: process.env.PRIVATE_KEY,
   rewardsDataGitUrl: process.env.REWARDS_DATA_GIT_URL,
   rewardsDataOutputGitUrl: process.env.REWARDS_DATA_OUTPUT_GIT_URL,

@@ -37,8 +37,9 @@ export class Controller {
   withdrawnCacheCheckExpiresAt :any = {}
   shardedMerkleTreeCache: any = {}
   shardedMerkleTreeProofCache: any = {}
+  rewardsContractNetwork: string
 
-  constructor (network: string = config.network, rewardsContractAddress: string = config.rewardsContractAddress) {
+  constructor (network: string = config.network, rewardsContractAddress: string = config.rewardsContractAddress, rewardsContractNetwork = config.rewardsContractNetwork) {
     if (!network) {
       throw new Error('NETWORK is required')
     }
@@ -66,7 +67,8 @@ export class Controller {
     if (!rewardsContractAddress) {
       throw new Error('REWARDS_CONTRACT_ADDRESS is required')
     }
-    const provider = new providers.StaticJsonRpcProvider(this.rpcUrls[network] || this.rpcUrls.mainnet)
+
+    const provider = new providers.StaticJsonRpcProvider(this.rpcUrls[rewardsContractNetwork])
 
     let signer : any
     if (config.privateKey) {
@@ -79,6 +81,7 @@ export class Controller {
     this.signerOrProvider = signerOrProvider
     this.network = network
     this.rewardsContractAddress = rewardsContractAddress
+    this.rewardsContractNetwork = rewardsContractNetwork
     this.notifier = new Notifier()
   }
 
@@ -621,7 +624,7 @@ export class Controller {
     Instructions to verify merkle root:
 
     \`\`\`
-    docker run hopprotocol/merkle-drop-framework start:dist generate -- --network=${this.network} --rewards-contract=${this.rewardsContractAddress} --start-timestamp=${startTimestamp} --end-timestamp=${endTimestamp}
+    docker run hopprotocol/merkle-drop-framework start:dist generate -- --network=${this.network} --rewards-contract=${this.rewardsContractAddress} --rewards-contract-network=${this.rewardsContractNetwork} --start-timestamp=${startTimestamp} --end-timestamp=${endTimestamp}
     \`\`\`
     `
 
