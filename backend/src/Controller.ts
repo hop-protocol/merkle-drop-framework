@@ -385,30 +385,37 @@ export class Controller {
     if (!entry) {
       throw new Error('no entry')
     }
-    const [claimedAmount, claimableAmount] = await Promise.all([this.getClaimed(account), this.getClaimableForAccount(account)])
-    let lockedBalance = BigNumber.from(entry.balance).sub(claimedAmount).sub(claimableAmount)
+    let lockedBalance = BigNumber.from(entry.balance)
+    const isRootSet = !BigNumber.from(onchainRoot).eq(BigNumber.from(0))
+    if (isRootSet) {
+      const [claimedAmount, claimableAmount] = await Promise.all([this.getClaimed(account), this.getClaimableForAccount(account)])
+      lockedBalance = lockedBalance.sub(claimedAmount).sub(claimableAmount)
+    }
     if (lockedBalance.lt(0) || onchainRoot === root) {
       lockedBalance = BigNumber.from(0)
     }
 
     account = account.toLowerCase()
-    const onchainShardedMerkleTree = this.shardedMerkleTreeCache[onchainRoot] ?? await ShardedMerkleTree.fetchTree(config.merkleBaseUrl, onchainRoot)
-    const proofData = this.shardedMerkleTreeProofCache[onchainRoot]?.[account] ?? await onchainShardedMerkleTree.getProof(account)
-    const [onchainEntry] = proofData
+    let amount = BigNumber.from(0)
+    if (isRootSet) {
+      const onchainShardedMerkleTree = this.shardedMerkleTreeCache[onchainRoot] ?? await ShardedMerkleTree.fetchTree(config.merkleBaseUrl, onchainRoot)
+      const proofData = this.shardedMerkleTreeProofCache[onchainRoot]?.[account] ?? await onchainShardedMerkleTree.getProof(account)
+      const [onchainEntry] = proofData
 
-    if (!this.shardedMerkleTreeCache[onchainRoot]) {
-      this.shardedMerkleTreeCache[onchainRoot] = onchainShardedMerkleTree
-    }
-    if (!this.shardedMerkleTreeProofCache[onchainRoot]) {
-      this.shardedMerkleTreeProofCache[onchainRoot] = {}
-    }
-    if (!this.shardedMerkleTreeProofCache[onchainRoot][account]) {
-      this.shardedMerkleTreeProofCache[onchainRoot][account] = proofData
-    }
+      if (!this.shardedMerkleTreeCache[onchainRoot]) {
+        this.shardedMerkleTreeCache[onchainRoot] = onchainShardedMerkleTree
+      }
+      if (!this.shardedMerkleTreeProofCache[onchainRoot]) {
+        this.shardedMerkleTreeProofCache[onchainRoot] = {}
+      }
+      if (!this.shardedMerkleTreeProofCache[onchainRoot][account]) {
+        this.shardedMerkleTreeProofCache[onchainRoot][account] = proofData
+      }
 
-    const total = BigNumber.from(onchainEntry.balance)
-    const withdrawn = await this.getWithdrawn(account)
-    const amount = total.sub(withdrawn)
+      const total = BigNumber.from(onchainEntry.balance)
+      const withdrawn = await this.getWithdrawn(account)
+      amount = total.sub(withdrawn)
+    }
 
     return {
       account,
