@@ -58,7 +58,7 @@ class ShardedMerkleTree {
 
     const entry = shard.entries[address.toLowerCase()]
     if (!entry) {
-      throw new Error('Invalid Entry')
+      throw new Error('Invalid Entry (0)')
     }
 
     const leaf = hashLeaf([address, entry])
@@ -82,7 +82,7 @@ class ShardedMerkleTree {
     const entry = shard.entries[address.toLowerCase()]
 
     if (!entry) {
-      throw new Error('Invalid Entry')
+      throw new Error('Invalid Entry (1)')
     }
     const leaf = hashLeaf([address, entry])
 
@@ -152,7 +152,8 @@ class ShardedMerkleTree {
         const url = `${merkleBaseUrl}/${rootHash}/${shard}.json`
         const res = await fetch(url)
         if (res.status === 404) {
-          throw new Error('Invalid Entry')
+          console.log('invalid entry', 'rootHash', rootHash, 'shard', shard)
+          throw new Error('Invalid Entry (2)')
         }
         return res.json()
       },

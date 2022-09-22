@@ -383,6 +383,7 @@ export class Controller {
     const shardedMerkleTree = ShardedMerkleTree.fromFiles(merkleDataPath)
     const [entry, proof] = await shardedMerkleTree.getProof(account.toLowerCase())
     if (!entry) {
+      console.log('no entry found', 'account', account, 'root', root)
       throw new Error('no entry')
     }
     let lockedBalance = BigNumber.from(entry.balance)
@@ -398,23 +399,27 @@ export class Controller {
     account = account.toLowerCase()
     let amount = BigNumber.from(0)
     if (isRootSet) {
-      const onchainShardedMerkleTree = this.shardedMerkleTreeCache[onchainRoot] ?? await ShardedMerkleTree.fetchTree(config.merkleBaseUrl, onchainRoot)
-      const proofData = this.shardedMerkleTreeProofCache[onchainRoot]?.[account] ?? await onchainShardedMerkleTree.getProof(account)
-      const [onchainEntry] = proofData
+      try {
+        const onchainShardedMerkleTree = this.shardedMerkleTreeCache[onchainRoot] ?? await ShardedMerkleTree.fetchTree(config.merkleBaseUrl, onchainRoot)
+        const proofData = this.shardedMerkleTreeProofCache[onchainRoot]?.[account] ?? await onchainShardedMerkleTree.getProof(account)
+        const [onchainEntry] = proofData
 
-      if (!this.shardedMerkleTreeCache[onchainRoot]) {
-        this.shardedMerkleTreeCache[onchainRoot] = onchainShardedMerkleTree
-      }
-      if (!this.shardedMerkleTreeProofCache[onchainRoot]) {
-        this.shardedMerkleTreeProofCache[onchainRoot] = {}
-      }
-      if (!this.shardedMerkleTreeProofCache[onchainRoot][account]) {
-        this.shardedMerkleTreeProofCache[onchainRoot][account] = proofData
-      }
+        if (!this.shardedMerkleTreeCache[onchainRoot]) {
+          this.shardedMerkleTreeCache[onchainRoot] = onchainShardedMerkleTree
+        }
+        if (!this.shardedMerkleTreeProofCache[onchainRoot]) {
+          this.shardedMerkleTreeProofCache[onchainRoot] = {}
+        }
+        if (!this.shardedMerkleTreeProofCache[onchainRoot][account]) {
+          this.shardedMerkleTreeProofCache[onchainRoot][account] = proofData
+        }
 
-      const total = BigNumber.from(onchainEntry.balance)
-      const withdrawn = await this.getWithdrawn(account)
-      amount = total.sub(withdrawn)
+        const total = BigNumber.from(onchainEntry.balance)
+        const withdrawn = await this.getWithdrawn(account)
+        amount = total.sub(withdrawn)
+      } catch (err) {
+        console.error('tree error (possibly no entry for account as expected):', err)
+      }
     }
 
     return {
@@ -433,12 +438,16 @@ export class Controller {
     const root = await this.getOnchainRoot()
     const merkleDataPath = path.resolve(config.outputRepoPath, root)
     const shardedMerkleTree = ShardedMerkleTree.fromFiles(merkleDataPath)
-    const [entry] = await shardedMerkleTree.getProof(account.toLowerCase())
-    if (!entry) {
+    try {
+      const [entry] = await shardedMerkleTree.getProof(account.toLowerCase())
+      if (!entry) {
+        return BigNumber.from(0)
+      }
+      const claimedAmount = await this.getClaimed(account)
+      return BigNumber.from(entry.balance).sub(claimedAmount)
+    } catch (err) {
       return BigNumber.from(0)
     }
-    const claimedAmount = await this.getClaimed(account)
-    return BigNumber.from(entry.balance).sub(claimedAmount)
   }
 
   async getWithdrawn (account: string) {
