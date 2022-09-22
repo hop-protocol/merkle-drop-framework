@@ -707,7 +707,10 @@ export class Controller {
       refundAmountAfterDiscount,
       refundAmountAfterDiscountWei,
       refundAmountAfterDiscountUsd,
-      refundTokenSymbol: _refundTokenSymbol
+      refundTokenSymbol: _refundTokenSymbol,
+      sourceTxCostUsd,
+      bonderFeeUsd,
+      ammFeeUsd
     } = await feeRefund.getRefundAmount(_transfer)
     return {
       totalUsdCost,
@@ -716,7 +719,10 @@ export class Controller {
       refundAmountAfterDiscount,
       refundAmountAfterDiscountWei,
       refundAmountAfterDiscountUsd,
-      refundTokenSymbol: _refundTokenSymbol
+      refundTokenSymbol: _refundTokenSymbol,
+      sourceTxCostUsd,
+      bonderFeeUsd,
+      ammFeeUsd
     }
   }
 
