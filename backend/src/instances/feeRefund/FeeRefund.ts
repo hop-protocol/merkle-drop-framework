@@ -1,5 +1,4 @@
 import { FeeRefund } from '@hop-protocol/fee-refund'
-import { config } from '../../config'
 import fs from 'fs'
 import path from 'path'
 
@@ -7,6 +6,7 @@ const feesDbPath = process.env.FEES_DB_PATH || __dirname
 
 export class OptimismFeeRefund {
   controller: any
+  refundChain = 'optimism'
 
   constructor (controller: any) {
     this.controller = controller
@@ -24,13 +24,12 @@ export class OptimismFeeRefund {
       fs.mkdirSync(dbDir, { recursive: true })
     }
 
-    const refundChain = 'optimism'
     const refundTokenSymbol = await this.controller.getTokenSymbol()
     const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
     const merkleRewardsContractAddress = this.controller.rewardsContractAddress
     const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
 
-    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain, refundTokenSymbol, maxRefundAmount }
+    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount }
     const feeRefund = new FeeRefund(_config)
 
     const id = Date.now()
@@ -42,20 +41,10 @@ export class OptimismFeeRefund {
     console.log('calculating fees')
     console.time('calculateFees ' + id)
     const result = await feeRefund.calculateFees(endTimestamp)
-    const filtered = result
-
-    // for testing
-    // TODO: remove when live
-    /*
-    filtered = {
-      '0x9997da3de3ec197c853bcc96caecf08a81de9d69': result['0x9997da3de3ec197c853bcc96caecf08a81de9d69']
-    }
-    */
 
     console.timeEnd('calculateFees ' + id)
-    console.log('getData done', result)
-    console.log('filtered', filtered)
-    return { data: filtered }
+    console.log('getData done:', result)
+    return { data: result }
   }
 
   async getRefundAmount (transfer: any) {
@@ -72,13 +61,12 @@ export class OptimismFeeRefund {
       fs.mkdirSync(dbDir, { recursive: true })
     }
 
-    const refundChain = 'optimism'
     const refundTokenSymbol = await this.controller.getTokenSymbol()
     const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
     const merkleRewardsContractAddress = this.controller.rewardsContractAddress
     const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
 
-    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp: this.controller.startTimestamp, refundPercentage, refundChain, refundTokenSymbol, maxRefundAmount }
+    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp: this.controller.startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount }
     const feeRefund = new FeeRefund(_config)
 
     if (transfer.chain === 'ethereum') {
