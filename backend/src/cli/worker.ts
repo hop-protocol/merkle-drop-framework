@@ -65,10 +65,9 @@ async function main (options: any) {
         console.log(err.message)
       }
 
-      endTimestamp = Math.min(endTimestamp, Math.floor(Date.now() / 1000))
-      startTimestamp = Math.min(startTimestamp, endTimestamp)
       const checkpointIntervalMs = (Number(options.checkpointInterval) || 1 * 60 * 60) * 1000
       config.checkpointIntervalMs = checkpointIntervalMs
+      config.startTimestamp = startTimestamp
 
       if (!lastCheckpointMs) {
         const lastRepoCheckpointMs = await controller.getLastRepoCheckpointMs()

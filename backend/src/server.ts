@@ -126,7 +126,6 @@ app.get('/v1/refund-amount', responseCache, async (req: any, res: any) => {
 
 app.get('/v1/rewards-info', async (req: any, res: any) => {
   try {
-    controller.checkpointIntervalMs = config.checkpointIntervalMs
     const estimatedTimeMsTilCheckpoint = await controller.getRemainingTimeTilCheckpoint()
     const estimatedDateMs = Date.now() + estimatedTimeMsTilCheckpoint
     const data = {

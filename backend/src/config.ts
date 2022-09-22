@@ -19,6 +19,7 @@ export const config = {
   feesDbPath: process.env.FEES_DB_PATH || __dirname,
   outputMerklePath: process.env.OUTPUT_MERKLE_PATH,
   checkpointIntervalMs: 0,
+  startTimestamp: 0,
   merkleBaseUrl: process.env.MERKLE_BASE_URL
 }
 export const slackChannel = process.env.SLACK_CHANNEL

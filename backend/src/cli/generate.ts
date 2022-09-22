@@ -24,9 +24,6 @@ async function main (options: any = {}) {
   let startTimestamp = Number(options.startTimestamp) || Math.floor((Date.now()/1000) - 60 * 60)
   let endTimestamp = Number(options.endTimestamp) || Math.floor(Date.now()/1000)
 
-  endTimestamp = Math.min(endTimestamp, Math.floor(Date.now() / 1000))
-  startTimestamp = Math.min(startTimestamp, endTimestamp)
-
   const controller = new Controller(options.network, options.rewardsContract, options.rewardsContractNetwork)
 
   console.log('network', options.network)

@@ -38,6 +38,7 @@ export class Controller {
   shardedMerkleTreeCache: any = {}
   shardedMerkleTreeProofCache: any = {}
   rewardsContractNetwork: string
+  startTimestamp: number
 
   constructor (network: string = config.network, rewardsContractAddress: string = config.rewardsContractAddress, rewardsContractNetwork = config.rewardsContractNetwork) {
     if (!network) {
@@ -368,6 +369,10 @@ export class Controller {
   }
 
   async getRewardsForAccount (account: string) {
+    if (!this.isStartTimestampReady()) {
+      throw new Error('not ready yet')
+    }
+
     if (!config.outputMerklePath) {
       throw new Error('OUTPUT_REPO_PATH is required')
     }
@@ -655,7 +660,10 @@ export class Controller {
   }
 
   async getRefundAmount (transfer: any) {
-    const startTimestamp = Math.floor(Date.now() / 1000)
+    if (!this.isStartTimestampReady()) {
+      throw new Error('not ready yet')
+    }
+
     if (!config.feesDbPath) {
       throw new Error('FEES_DB_PATH is required')
     }
@@ -671,7 +679,7 @@ export class Controller {
     const merkleRewardsContractAddress = this.rewardsContractAddress
     const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
 
-    const _config = { network: this.network, dbDir, rpcUrls: this.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain, refundTokenSymbol, maxRefundAmount }
+    const _config = { network: this.network, dbDir, rpcUrls: this.rpcUrls, merkleRewardsContractAddress, startTimestamp: this.startTimestamp, refundPercentage, refundChain, refundTokenSymbol, maxRefundAmount }
     const feeRefund = new FeeRefund(_config)
 
     if (transfer.chain === 'ethereum') {
@@ -813,6 +821,14 @@ export class Controller {
   }
 
   async getRemainingTimeTilCheckpoint () {
+    if (!this.isStartTimestampReady()) {
+      throw new Error('not ready yet')
+    }
+
+    if (!this.checkpointIntervalMs) {
+      this.checkpointIntervalMs = config.checkpointIntervalMs
+    }
+
     const defaultTimeMs = (24 * 60 * 60 * 1000)
     if (!this.checkpointIntervalMs) {
       console.log('this.checkpointIntervalMs not set')
@@ -841,5 +857,14 @@ export class Controller {
     }
     const sanitizedGithubUrl = githubUrl.replace(/ghp_.*@/g, '')
     return sanitizedGithubUrl
+  }
+
+  isStartTimestampReady () {
+    if (!this.startTimestamp) {
+      this.startTimestamp = config.startTimestamp
+    }
+
+    const isReady = this.startTimestamp < (Date.now() / 1000)
+    return isReady
   }
 }
