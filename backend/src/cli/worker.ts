@@ -101,7 +101,7 @@ async function main (options: any) {
       console.log('root:', rootHash)
       console.log('total:', `${totalFormatted}`)
 
-      const isExpired = lastCheckpointMs + checkpointIntervalMs < Date.now()
+      const isExpired = (lastCheckpointMs || startTimestamp) + checkpointIntervalMs < Date.now()
       const shouldCheckpoint = !options.noCheckpoint && isExpired && rootHash !== '0x'
       console.log('shouldCheckpoint:', shouldCheckpoint)
       if (shouldCheckpoint) {
