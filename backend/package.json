@@ -13,7 +13,7 @@
     "start:server": "ts-node src/server.ts",
     "lint": "npx eslint --ext .ts --fix src/*.ts",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest test/*.test.ts",
     "clean": "rimraf dist",
     "prepare": "npm run build"
   },
@@ -23,6 +23,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/fs-extra": "^9.0.13",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/jest": "^28.1.8",
     "@types/luxon": "^3.0.0",

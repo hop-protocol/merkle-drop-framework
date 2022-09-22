@@ -21,21 +21,20 @@ program
 
 async function main (options: any = {}) {
   console.log('options:', options)
-  let startTimestamp = Number(options.startTimestamp) || Math.floor((Date.now()/1000) - 60 * 60)
-  let endTimestamp = Number(options.endTimestamp) || Math.floor(Date.now()/1000)
+  const startTimestamp = Number(options.startTimestamp) || Math.floor((Date.now()/1000) - 60 * 60)
+  const endTimestamp = Number(options.endTimestamp) || Math.floor(Date.now()/1000)
 
   const controller = new Controller(options.network, options.rewardsContract, options.rewardsContractNetwork)
 
-  console.log('network', options.network)
-  console.log('rewardsContract', options.rewardsContract)
-  console.log('startTimestamp', startTimestamp)
-  console.log('endTimestamp', endTimestamp)
+  console.log('network:', options.network)
+  console.log('rewardsContract:', options.rewardsContract)
+  console.log('startTimestamp:', startTimestamp)
+  console.log('endTimestamp:', endTimestamp)
 
   const { tree, total, onchainPreviousTotalAmount, calldata } = await controller.generateRoot({shouldWrite: false, startTimestamp, endTimestamp})
   const rootHash = tree.getHexRoot()
   console.log('root:', rootHash)
   console.log('total:', `${total.toString()} (${formatUnits(total.toString(), 18)})`)
-  //console.log('additionalAmount:', `${additionalAmount.toString()} (${formatUnits(additionalAmount.toString(), 18)})`)
   console.log('onchainPreviousTotalAmount:', `${onchainPreviousTotalAmount.toString()} (${formatUnits(onchainPreviousTotalAmount.toString(), 18)})`)
   console.log('calldata:', JSON.stringify(calldata))
   console.log('done')

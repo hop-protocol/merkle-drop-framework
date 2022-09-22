@@ -1,10 +1,10 @@
 import express from 'express'
-import { port, config } from './config'
+import { port } from './config'
 import cors from 'cors'
 import { ipRateLimitMiddleware } from './rateLimit'
 import { getAddress } from 'ethers/lib/utils'
 import { responseCache } from './responseCache'
-import { controller } from './instance'
+import { controller, setAdditionalRoutes } from './instance'
 
 const app = express()
 
@@ -44,86 +44,6 @@ app.get('/v1/rewards', responseCache, async (req: any, res: any) => {
   }
 })
 
-app.get('/v1/refund-amount', responseCache, async (req: any, res: any) => {
-  try {
-    const {
-      gasCost,
-      gasLimit,
-      gasPrice,
-      amount,
-      token,
-      bonderFee,
-      fromChain
-    } = req.query
-
-    if (!gasCost) {
-      if (!gasLimit) {
-        throw new Error('gasLimit is required')
-      }
-
-      if (!gasPrice) {
-        throw new Error('gasPrice is required')
-      }
-    }
-
-    if (!amount) {
-      throw new Error('amount is required')
-    }
-
-    if (!token) {
-      throw new Error('token is required')
-    }
-
-    if (!bonderFee) {
-      throw new Error('bonderFee is required')
-    }
-
-    if (!fromChain) {
-      throw new Error('fromChain is required')
-    }
-
-    const transfer = {
-      gasCost: gasCost?.toString(),
-      gasLimit: gasLimit?.toString(),
-      gasPrice: gasPrice?.toString(),
-      timestamp: Math.floor(Date.now() / 1000),
-      amount: amount.toString(),
-      token,
-      bonderFee: bonderFee.toString(),
-      chain: fromChain.toString()
-    }
-
-    const {
-      totalUsdCost,
-      price,
-      refundAmount,
-      refundAmountAfterDiscount,
-      refundAmountAfterDiscountUsd,
-      refundTokenSymbol,
-      sourceTxCostUsd,
-      bonderFeeUsd,
-      ammFeeUsd
-    } = await controller.getRefundAmount(transfer)
-    const data = {
-      refund: {
-        costInUsd: totalUsdCost,
-        costInRefundToken: refundAmount,
-        refundTokenPrice: price,
-        refundAmountInRefundToken: refundAmountAfterDiscount,
-        refundAmountInUsd: refundAmountAfterDiscountUsd,
-        refundTokenSymbol,
-        sourceTxCostUsd,
-        bonderFeeUsd,
-        ammFeeUsd
-      }
-    }
-    res.status(200).json({ status: 'ok', data })
-  } catch (err) {
-    console.error('request error:', err)
-    res.status(400).json({ error: err.message })
-  }
-})
-
 app.get('/v1/rewards-info', async (req: any, res: any) => {
   try {
     const estimatedTimeMsTilCheckpoint = await controller.getRemainingTimeTilCheckpoint()
@@ -139,6 +59,8 @@ app.get('/v1/rewards-info', async (req: any, res: any) => {
     res.status(400).json({ error: err.message })
   }
 })
+
+setAdditionalRoutes(app)
 
 export async function startServer () {
   const host = '0.0.0.0'

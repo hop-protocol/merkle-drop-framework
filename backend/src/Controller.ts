@@ -9,7 +9,6 @@ import { constants, Wallet, BigNumber, Contract, providers } from 'ethers'
 import { formatUnits, parseUnits } from 'ethers/lib/utils'
 import merkleRewardsAbi from './abi/MerkleRewards.json'
 import tokenAbi from './abi/ERC20.json'
-import { FeeRefund } from '@hop-protocol/fee-refund'
 import { forumPost } from './forumPost'
 import { DateTime } from 'luxon'
 import { config } from './config'
@@ -497,9 +496,13 @@ export class Controller {
     return root
   }
 
-  async getData (options: any) {
+  async getData (options: any): Promise<any> {
     // return this.getDataFromRepo(options)
     return this.getDataFromPackage(options)
+  }
+
+  setGetDataFromPackage (fn: any) {
+    this.getDataFromPackage = fn
   }
 
   async getDataFromRepo (options: any) {
@@ -550,49 +553,8 @@ export class Controller {
     return { data, timestampRangeTotal }
   }
 
-  async getDataFromPackage (options: any) {
-    const { startTimestamp, endTimestamp } = options
-    if (!config.feesDbPath) {
-      throw new Error('FEES_DB_PATH is required')
-    }
-    const dbDir = path.resolve(config.feesDbPath, 'db')
-
-    if (!fs.existsSync(dbDir)) {
-      fs.mkdirSync(dbDir, { recursive: true })
-    }
-
-    const refundChain = 'optimism'
-    const refundTokenSymbol = await this.getTokenSymbol()
-    const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
-    const merkleRewardsContractAddress = this.rewardsContractAddress
-    const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
-
-    const _config = { network: this.network, dbDir, rpcUrls: this.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain, refundTokenSymbol, maxRefundAmount }
-    const feeRefund = new FeeRefund(_config)
-
-    const id = Date.now()
-
-    console.log('seeding')
-    console.time('seeding ' + id)
-    await feeRefund.seed()
-    console.timeEnd('seeding ' + id)
-    console.log('calculating fees')
-    console.time('calculateFees ' + id)
-    const result = await feeRefund.calculateFees(endTimestamp)
-    const filtered = result
-
-    // for testing
-    // TODO: remove when live
-    /*
-    filtered = {
-      '0x9997da3de3ec197c853bcc96caecf08a81de9d69': result['0x9997da3de3ec197c853bcc96caecf08a81de9d69']
-    }
-    */
-
-    console.timeEnd('calculateFees ' + id)
-    console.log('getData done', result)
-    console.log('filtered', filtered)
-    return { data: filtered }
+  async getDataFromPackage (options: any): Promise<any> {
+    throw new Error('not implemented')
   }
 
   async copyRootDataToOutputRepo (rootHash: string) {
@@ -657,90 +619,6 @@ export class Controller {
     console.log('forum post response', JSON.stringify(response, null, 2))
     console.log('post url:', response.postUrl)
     return response
-  }
-
-  async getRefundAmount (transfer: any) {
-    if (!this.isStartTimestampReady()) {
-      throw new Error('not ready yet')
-    }
-
-    if (!config.feesDbPath) {
-      throw new Error('FEES_DB_PATH is required')
-    }
-    const dbDir = path.resolve(config.feesDbPath, 'db')
-
-    if (!fs.existsSync(dbDir)) {
-      fs.mkdirSync(dbDir, { recursive: true })
-    }
-
-    const refundChain = 'optimism'
-    const refundTokenSymbol = await this.getTokenSymbol()
-    const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
-    const merkleRewardsContractAddress = this.rewardsContractAddress
-    const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
-
-    const _config = { network: this.network, dbDir, rpcUrls: this.rpcUrls, merkleRewardsContractAddress, startTimestamp: this.startTimestamp, refundPercentage, refundChain, refundTokenSymbol, maxRefundAmount }
-    const feeRefund = new FeeRefund(_config)
-
-    if (transfer.chain === 'ethereum') {
-      transfer.chain = 'mainnet'
-    }
-
-    if (transfer.chain === 'xdai') {
-      transfer.chain = 'gnosis'
-    }
-
-    if (transfer.token === 'WETH') {
-      transfer.token = 'ETH'
-    }
-
-    if (transfer.token === 'XDAI') {
-      transfer.token = 'DAI'
-    }
-
-    if (transfer.token === 'WXDAI') {
-      transfer.token = 'DAI'
-    }
-
-    if (transfer.token === 'WMATIC') {
-      transfer.token = 'MATIC'
-    }
-
-    const _transfer: any = {
-      amount: transfer.amount,
-      gasCost: transfer.gasCost,
-      gasUsed: transfer.gasLimit,
-      gasPrice: transfer.gasPrice,
-      chain: transfer.chain,
-      timestamp: transfer.timestamp,
-      bonderFee: transfer.bonderFee,
-      token: transfer.token
-    }
-
-    const {
-      totalUsdCost,
-      price,
-      refundAmount,
-      refundAmountAfterDiscount,
-      refundAmountAfterDiscountWei,
-      refundAmountAfterDiscountUsd,
-      refundTokenSymbol: _refundTokenSymbol,
-      sourceTxCostUsd,
-      bonderFeeUsd,
-      ammFeeUsd
-    } = await feeRefund.getRefundAmount(_transfer)
-    return {
-      totalUsdCost,
-      price,
-      refundAmount,
-      refundAmountAfterDiscount,
-      refundAmountAfterDiscountWei,
-      refundAmountAfterDiscountUsd,
-      refundTokenSymbol: _refundTokenSymbol,
-      sourceTxCostUsd,
-      bonderFeeUsd,
-      ammFeeUsd
-    }
   }
 
   async getLastRepoCheckpointMs (): Promise<number> {

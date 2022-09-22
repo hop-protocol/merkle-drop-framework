@@ -1,7 +1,6 @@
 import { program } from 'commander'
 
-require('./worker')
-require('./generate')
-require('./refundAmount')
+import './worker'
+import './generate'
 
 program.parse()

@@ -5,17 +5,15 @@ type MessageOptions = {
   channel: string
 }
 
-/*
-export abstract class INotifier {
-  error (message: string) {}
-  info (message: string) {}
-  log (message: string) {}
-  success (message: string) {}
-  warn (message: string) {}
+export interface INotifier {
+  error (message: string): any
+  info (message: string): any
+  log (message: string): any
+  success (message: string): any
+  warn (message: string): any
 }
-*/
 
-export class Notifier {
+export class Notifier implements INotifier {
   client: WebClient
   channel: string
   label: string

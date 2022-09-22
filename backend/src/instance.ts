@@ -1,2 +1,10 @@
-import { Controller } from './Controller'
-export const controller = new Controller()
+const instanceToUse = 'feeRefund'
+
+let controller: any = null
+let setAdditionalRoutes: any = null
+
+if (instanceToUse === 'feeRefund') {
+  ({ controller, setAdditionalRoutes } = require('./instances/feeRefund'))
+}
+
+export { controller, setAdditionalRoutes }
