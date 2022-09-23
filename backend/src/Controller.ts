@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import { readdir } from 'fs/promises'
 import fs from 'fs'
 import fse from 'fs-extra'
 import path from 'path'
@@ -744,5 +745,33 @@ export class Controller {
 
     const isReady = this.startTimestamp < (Date.now() / 1000)
     return isReady
+  }
+
+  async pruneMerkleDir () {
+    console.log('pruning merkle dir')
+    let root : string
+    const source = path.resolve(config.outputRepoPath)
+    try {
+      ({ root } = JSON.parse(fs.readFileSync(path.resolve(source, 'latest.json'), 'utf8')))
+    } catch (err) {
+    }
+    const dirs = (await readdir(source, { withFileTypes: true }))
+      .filter(item => item.isDirectory())
+      .map(item => path.resolve(config.outputRepoPath, item.name))
+
+    const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000)
+    for (const dirPath of dirs) {
+      const mtime = fs.statSync(dirPath).mtime
+      const lastModified = DateTime.fromISO(mtime.toISOString())
+      if (lastModified.toMillis() < oneDayAgo) {
+        if (dirPath.startsWith('/tmp')) {
+          if (root && dirPath.includes(root)) {
+            continue
+          }
+          console.log('deleting', dirPath, lastModified.toRelative())
+          fs.rmSync(dirPath, { recursive: true, force: true })
+        }
+      }
+    }
   }
 }

@@ -143,6 +143,8 @@ async function main (options: any) {
 
       await db.put('lastTimestamp', startTimestamp.toString())
 
+      await controller.pruneMerkleDir()
+
       console.log('poll done')
       console.log(`next poll in ${pollInterval} seconds`)
     } catch (err) {
