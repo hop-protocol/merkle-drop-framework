@@ -36,6 +36,7 @@ request-refund-amount:
 
 request-rewards-info:
 	curl "http://localhost:8000/v1/rewards-info"
+# curl "https://optimism-fee-refund-api.hop.exchange/v1/rewards-info"
 
 bench:
 	(cd loadtest && ./bench.sh)

@@ -774,4 +774,27 @@ export class Controller {
       }
     }
   }
+
+  async getLockedRewards () {
+    if (!config.outputMerklePath) {
+      throw new Error('OUTPUT_REPO_PATH is required')
+    }
+
+    try {
+      const outDirectory = path.resolve(config.outputMerklePath)
+      const { root } = JSON.parse(fs.readFileSync(path.resolve(outDirectory, 'latest.json'), 'utf8'))
+      const { total } = JSON.parse(fs.readFileSync(path.resolve(outDirectory, root, 'root.json'), 'utf8'))
+      return {
+        root,
+        total: BigNumber.from(total.toString()),
+        totalFormatted: Number(formatUnits(total.toString(), 18))
+      }
+    } catch (err) {
+      console.error('getLockedRewards error:', err)
+      return {
+        root: '0x',
+        total: BigNumber.from(0)
+      }
+    }
+  }
 }

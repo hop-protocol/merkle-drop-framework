@@ -46,11 +46,17 @@ app.get('/v1/rewards', responseCache, async (req: any, res: any) => {
 
 app.get('/v1/rewards-info', async (req: any, res: any) => {
   try {
-    const estimatedTimeMsTilCheckpoint = await controller.getRemainingTimeTilCheckpoint()
+    const [estimatedTimeMsTilCheckpoint, lockedRewards] = await Promise.all([
+      controller.getRemainingTimeTilCheckpoint(),
+      controller.getLockedRewards()
+    ])
     const estimatedDateMs = Date.now() + estimatedTimeMsTilCheckpoint
     const data = {
       estimatedTimeMsTilCheckpoint,
-      estimatedDateMs
+      estimatedDateMs,
+      lockedRoot: lockedRewards.root,
+      lockedTotal: lockedRewards.total.toString(),
+      lockedTotalFormatted: lockedRewards.totalFormatted
     }
 
     res.json({ data })
