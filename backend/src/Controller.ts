@@ -5,8 +5,8 @@ import fse from 'fs-extra'
 import path from 'path'
 import globby from 'globby'
 import { ShardedMerkleTree } from './merkle'
-import simpleGit from 'simple-git'
-import { constants, Wallet, BigNumber, Contract, providers } from 'ethers'
+import simpleGit, { SimpleGit } from 'simple-git'
+import { Signer, constants, Wallet, BigNumber, Contract, providers } from 'ethers'
 import { formatUnits, parseUnits } from 'ethers/lib/utils'
 import merkleRewardsAbi from './abi/MerkleRewards.json'
 import tokenAbi from './abi/ERC20.json'
@@ -18,25 +18,25 @@ import { Notifier } from './Notifier'
 export class Controller {
   network: string
   rewardsContractAddress: string
-  contract: any
-  signer: any
-  signerOrProvider: any
+  contract: Contract
+  signer: Signer
+  signerOrProvider: Signer | providers.Provider
   checkpointIntervalMs: number
-  rpcUrls: any
+  rpcUrls: Record<string, any>
   notifier: Notifier
-  rewardsDataOutputGit : any
-  lastPull : any = {}
+  rewardsDataOutputGit : SimpleGit
+  lastPull : Record<string, any> = {}
   tokenAddress: string
   tokenSymbol: string
   tokenContract: Contract
   lastCheckpointMs = 0
   lastCheckpointMsCheckExpiresAt = 0
-  onchainRoot: any
-  onchainRootCheckExpiresAt: any
-  withdrawnCache : any = {}
-  withdrawnCacheCheckExpiresAt :any = {}
-  shardedMerkleTreeCache: any = {}
-  shardedMerkleTreeProofCache: any = {}
+  onchainRoot: string
+  onchainRootCheckExpiresAt: number
+  withdrawnCache : Record<string, any> = {}
+  withdrawnCacheCheckExpiresAt : Record<string, any> = {}
+  shardedMerkleTreeCache: Record<string, ShardedMerkleTree> = {}
+  shardedMerkleTreeProofCache: Record<string, any[]> = {}
   rewardsContractNetwork: string
   startTimestamp: number
 
@@ -62,21 +62,33 @@ export class Controller {
       }
     }
 
-    this.rpcUrls = allRpcUrls[network]
-    console.log(this.rpcUrls)
+    if (!network) {
+      throw new Error('NETWORK is required')
+    }
 
     if (!rewardsContractAddress) {
       throw new Error('REWARDS_CONTRACT_ADDRESS is required')
     }
 
+    if (!rewardsContractNetwork) {
+      throw new Error('REWARDS_CONTRACT_NETWORK is required')
+    }
+
+    if (!this.rpcUrls[rewardsContractNetwork]) {
+      throw new Error('invalid rewardsContractNetwork')
+    }
+
+    this.rpcUrls = allRpcUrls[network]
+    console.log(this.rpcUrls)
+
     const provider = new providers.StaticJsonRpcProvider(this.rpcUrls[rewardsContractNetwork])
 
-    let signer : any
+    let signer : Signer
     if (config.privateKey) {
       signer = new Wallet(config.privateKey, provider)
     }
 
-    const signerOrProvider = signer ?? provider
+    const signerOrProvider : Signer | providers.Provider = signer ?? provider
     this.contract = new Contract(rewardsContractAddress, merkleRewardsAbi, signerOrProvider)
     this.signer = signer
     this.signerOrProvider = signerOrProvider
@@ -96,6 +108,7 @@ export class Controller {
     if (!config.rewardsDataOutputGitUrl) {
       throw new Error('REWARDS_DATA_OUTPUT_GIT_URL is required')
     }
+
     const git = simpleGit()
 
     if (!config.outputRepoPath) {
@@ -107,6 +120,7 @@ export class Controller {
         await git.clone(config.rewardsDataOutputGitUrl, config.outputRepoPath)
       }
     } catch (err) {
+      console.error('rewardsDataOutputGitUrl clone error:', err)
     }
 
     try {
@@ -114,7 +128,7 @@ export class Controller {
         await git.clone(config.rewardsDataGitUrl, config.dataRepoPath)
       }
     } catch (err) {
-      // console.log('clone error', err)
+      console.log('rewardsDataGitUrl clone error:', err)
     }
 
     try {
@@ -124,6 +138,7 @@ export class Controller {
       console.log('pull error')
       throw err
     }
+
     console.log('done pulling data')
     return true
   }
@@ -132,6 +147,7 @@ export class Controller {
     if (!config.rewardsDataOutputGitUrl) {
       throw new Error('REWARDS_DATA_OUTPUT_GIT_URL is required')
     }
+
     const git = this.rewardsDataOutputGit ?? simpleGit()
     if (!this.rewardsDataOutputGit) {
       this.rewardsDataOutputGit = git
@@ -146,6 +162,7 @@ export class Controller {
         await git.clone(config.rewardsDataOutputGitUrl, config.outputRepoPath)
       }
     } catch (err) {
+      console.error('rewardsDataOutputGitUrl clone error:', err)
     }
 
     console.log('outputRepoPath:', config.outputRepoPath)
