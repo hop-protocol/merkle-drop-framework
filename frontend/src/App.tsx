@@ -12,17 +12,17 @@ import { parseUnits, formatEther, formatUnits } from 'ethers/lib/utils'
 import merkleRewardsAbi from './abi/MerkleRewards.json'
 import { ShardedMerkleTree } from './merkle'
 import erc20Abi from '@hop-protocol/core/abi/generated/ERC20.json'
-
-const rpcUrl = 'https://goerli.rpc.authereum.com'
+import { useQueryParams } from './hooks/useQueryParams'
 
 function App () {
+  const { queryParams, updateQueryParams } = useQueryParams()
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [claimRecipient, setClaimRecipient] = useState('')
   const [sending, setSending] = useState(false)
   const [requiredChainId, setRequiredChainId] = useState(() => {
     try {
-      return Number(localStorage.getItem('requiredChainId') || 5)
+      return Number(queryParams.chainId as string) || Number(localStorage.getItem('requiredChainId') || 5)
     } catch (err) {
     }
     return 5
@@ -41,7 +41,7 @@ function App () {
   const [newRootAdditionalAmount, setNewRootAdditionalAmount] = useState('')
   const [merkleBaseUrl, setMerkleBaseUrl] = useState(() => {
     try {
-      return localStorage.getItem('merkleBaseUrl') || ''
+      return localStorage.getItem('merkleBaseUrl') || queryParams.merkleBaseUrl as string || ''
     } catch (err) {
     }
     return ''
@@ -49,7 +49,7 @@ function App () {
   const [calldata, setCalldata] = useState('')
   const [rewardsContractAddress, setRewardsContractAddress] = useState(() => {
     try {
-      return localStorage.getItem('rewardsContractAddress') || ''
+      return queryParams.rewardsContract as string || localStorage.getItem('rewardsContractAddress') || ''
     } catch (err) {
     }
     return ''
@@ -61,9 +61,7 @@ function App () {
   })
   const [provider] = useState(() => {
     try {
-      const _provider = new providers.StaticJsonRpcProvider(rpcUrl)
-      return _provider
-      // return new providers.Web3Provider((window as any).ethereum)
+      return new providers.Web3Provider((window as any).ethereum)
     } catch (err: any) {
       setError(err.message)
     }
@@ -90,18 +88,21 @@ function App () {
   useEffect(() => {
     try {
       localStorage.setItem('requiredChainId', requiredChainId?.toString() || '')
+      updateQueryParams({ chainId: requiredChainId?.toString() })
     } catch (err) {
     }
   }, [requiredChainId])
   useEffect(() => {
     try {
       localStorage.setItem('rewardsContractAddress', rewardsContractAddress || '')
+      updateQueryParams({ rewardsContract: rewardsContractAddress })
     } catch (err) {
     }
   }, [rewardsContractAddress])
   useEffect(() => {
     try {
       localStorage.setItem('merkleBaseUrl', merkleBaseUrl || '')
+      updateQueryParams({ merkleBaseUrl: merkleBaseUrl })
     } catch (err) {
     }
   }, [merkleBaseUrl])
