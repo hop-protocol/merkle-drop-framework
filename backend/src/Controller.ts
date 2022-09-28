@@ -14,6 +14,7 @@ import { forumPost } from './forumPost'
 import { DateTime } from 'luxon'
 import { config } from './config'
 import { Notifier } from './Notifier'
+import { chainSlugToId } from './utils'
 
 export class Controller {
   network: string
@@ -36,7 +37,7 @@ export class Controller {
   withdrawnCache : Record<string, any> = {}
   withdrawnCacheCheckExpiresAt : Record<string, any> = {}
   shardedMerkleTreeCache: Record<string, ShardedMerkleTree> = {}
-  shardedMerkleTreeProofCache: Record<string, any[]> = {}
+  shardedMerkleTreeProofCache: Record<string, any> = {}
   rewardsContractNetwork: string
   startTimestamp: number
 
@@ -611,23 +612,27 @@ export class Controller {
     const endDate = DateTime.fromSeconds(endTimestamp)
     const postTitle = `AUTOMATED: New Merkle Rewards Root ${endDate.toRFC2822()}`
     const sanitizedGithubUrl = this.getSanitizedGithubUrl(config.rewardsDataOutputGitUrl)
+    const chainId = chainSlugToId(this.rewardsContractNetwork)
     const postContent = `
-    This is an automated post by the merkle rewards worker bot.
+This is an automated post by the merkle rewards worker bot.
 
-    A new merkle root has been published to GitHub:
-    ${sanitizedGithubUrl}
+A new merkle root has been published to GitHub:
+${sanitizedGithubUrl}
 
-    Merkle root hash: ${rootHash}
-    Merkle root total amount: ${totalFormatted}
-    Start timestamp: ${startTimestamp} (${startDate.toISO()})
-    End timestamp: ${endTimestamp} (${endDate.toISO()})
+Merkle root hash: ${rootHash}
+Merkle root total amount: ${totalFormatted}
+Start timestamp: ${startTimestamp} (${startDate.toISO()})
+End timestamp: ${endTimestamp} (${endDate.toISO()})
 
-    Instructions to verify merkle root:
+Instructions to verify merkle root:
 
-    \`\`\`
-    docker run hopprotocol/merkle-drop-framework start:dist generate -- --network=${this.network} --rewards-contract=${this.rewardsContractAddress} --rewards-contract-network=${this.rewardsContractNetwork} --start-timestamp=${startTimestamp} --end-timestamp=${endTimestamp}
-    \`\`\`
-    `
+\`\`\`
+docker run hopprotocol/merkle-drop-framework start:dist generate -- --network=${this.network} --rewards-contract=${this.rewardsContractAddress} --rewards-contract-network=${this.rewardsContractNetwork} --start-timestamp=${startTimestamp} --end-timestamp=${endTimestamp}
+\`\`\`
+
+Web app to submit merkle root:
+https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContractAddress}&merkleBaseUrl=${encodeURIComponent(config.merkleBaseUrl)}
+`.trim()
 
     console.log('forum post:')
     console.log(postTitle)
