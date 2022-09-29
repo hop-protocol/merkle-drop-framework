@@ -5,6 +5,7 @@ export const ipRateLimitWindowMs = Number(process.env.IP_RATE_LIMIT_WINDOW_MS ||
 export const forumBaseUrl = process.env.FORUM_BASE_URL ?? 'http://localhost:4200'
 export const forumUsername = process.env.FORUM_USERNAME
 export const forumApiKey = process.env.FORUM_API_KEY
+export const forumCategoryId = process.env.FORUM_CATEGORY_ID
 export const disableResponseCache = process.env.DISABLE_RESPONSE_CACHE
 export const responseCacheDurationMs = Number(process.env.RESPONSE_CACHE_DURATION_MS || 10 * 1000)
 export const slackChannel = process.env.SLACK_CHANNEL

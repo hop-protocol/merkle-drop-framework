@@ -13,4 +13,5 @@ output.json
 db
 src/db
 src/db*
+src/testForumPost.ts
 prod.sh

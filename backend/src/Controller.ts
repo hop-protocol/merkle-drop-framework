@@ -618,7 +618,7 @@ export class Controller {
     const sanitizedGithubUrl = this.getSanitizedGithubUrl(config.rewardsDataOutputGitUrl)
     const chainId = chainSlugToId(this.rewardsContractNetwork)
     const postContent = `
-This is an automated post by the merkle rewards worker bot.
+This is an automated post by the merkle rewards worker bot 🤖
 
 A new merkle root has been published to GitHub:
 ${sanitizedGithubUrl}
@@ -627,14 +627,26 @@ Merkle root hash: ${rootHash}
 Merkle root total amount: ${totalFormatted}
 Start timestamp: ${startTimestamp} (${startDate.toISO()})
 End timestamp: ${endTimestamp} (${endDate.toISO()})
+Rewards contract address: ${this.rewardsContractAddress}
+Rewards contract network: ${this.rewardsContractNetwork}
 
 Instructions to verify merkle root:
 
 \`\`\`
-docker run hopprotocol/merkle-drop-framework start:dist generate -- --network=${this.network} --rewards-contract=${this.rewardsContractAddress} --rewards-contract-network=${this.rewardsContractNetwork} --start-timestamp=${startTimestamp} --end-timestamp=${endTimestamp}
+docker run --env-file docker.env hopprotocol/merkle-drop-framework start:dist generate -- --network=${this.network} --rewards-contract=${this.rewardsContractAddress} --rewards-contract-network=${this.rewardsContractNetwork} --start-timestamp=${startTimestamp} --end-timestamp=${endTimestamp}
 \`\`\`
 
-Web app to submit merkle root:
+Supply RPC urls in \`docker.env\`:
+
+\`\`\`
+ETHEREUM_RPC_URL=https://example.com
+POLYGON_RPC_URL=https://example.com
+OPTIMISM_RPC_URL=https://example.com
+ARBITRUM_RPC_URL=https://example.com
+GNOSIS_RPC_URL=https://example.com
+\`\`\`
+
+Web app to publish root:
 https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContractAddress}&merkleBaseUrl=${encodeURIComponent(config.merkleBaseUrl)}
 `.trim()
 

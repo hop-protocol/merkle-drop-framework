@@ -1,5 +1,5 @@
 import fetch from 'isomorphic-fetch'
-import { forumBaseUrl, forumUsername, forumApiKey } from './config'
+import { forumBaseUrl, forumUsername, forumApiKey, forumCategoryId } from './config'
 // import FormData from 'form-data'
 
 export async function forumPost (postTitle: string, postContent: string) {
@@ -9,7 +9,7 @@ export async function forumPost (postTitle: string, postContent: string) {
     title: postTitle,
     raw: postContent,
     archetype: 'regular',
-    category: 'automated'
+    category: forumCategoryId
   })
 
   if (!forumUsername) {
