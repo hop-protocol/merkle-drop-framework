@@ -602,6 +602,9 @@ console.log(claimRecipient, totalAmount, proof)
             <Alert severity="success">{success}</Alert>
           </Box>
         )}
+        <Box>
+          <a href="https://github.com/hop-protocol/merkle-drop-framework/tree/master/frontend" target="_blank" rel="noopener noreferrer">Github</a>
+        </Box>
       </Box>
     </Box>
   )

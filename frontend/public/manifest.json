@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "MDF",
+  "name": "Merkle Drop Framework",
   "icons": [
     {
       "src": "favicon.ico",
