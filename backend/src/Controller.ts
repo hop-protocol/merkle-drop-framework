@@ -63,10 +63,6 @@ export class Controller {
       }
     }
 
-    if (!network) {
-      throw new Error('NETWORK is required')
-    }
-
     if (!rewardsContractAddress) {
       throw new Error('REWARDS_CONTRACT_ADDRESS is required')
     }

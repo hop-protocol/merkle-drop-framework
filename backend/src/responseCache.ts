@@ -6,7 +6,7 @@ export function responseCache (req: any, res: any, next: any) {
   const key = `__express__${urlKey}`
   const cachedBody = mcache.get(key)
   if (cachedBody && !disableResponseCache) {
-    console.log('cache hit:', key)
+    // console.log('cache hit:', key)
     res.send(cachedBody)
     return
   }
@@ -16,7 +16,7 @@ export function responseCache (req: any, res: any, next: any) {
     try {
       const parsed = JSON.parse(body)
       if (parsed.data) {
-        console.log('cached:', key)
+        // console.log('cached:', key)
         mcache.put(key, body, responseCacheDurationMs)
       }
     } catch (err) { }

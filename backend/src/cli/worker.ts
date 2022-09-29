@@ -4,7 +4,6 @@ import { Level } from 'level'
 import { DateTime } from 'luxon'
 import { startServer } from '../server'
 import { config } from '../config'
-import { controller } from '../instance'
 
 const levelDbPath = process.env.LEVEL_DB_PATH
 let lastCheckpointMs = 0
@@ -36,6 +35,8 @@ async function main (options: any) {
     startServer()
   }
 
+  const { controller } = require('../instance')
+
   const pollInterval = (Number(options.pollInterval) || 10)
 
   if (!levelDbPath) {
@@ -51,7 +52,7 @@ async function main (options: any) {
       // const changed = await controller.pullRewardsDataFromRepo()
 
       let startTimestamp = Number(options.startTimestamp) || Math.floor((Date.now() / 1000) - 60 * 60)
-      let endTimestamp = Number(options.endTimestamp) || Math.floor(Date.now() / 1000)
+      let endTimestamp = Number(options.endTimestamp) || (Math.floor(Date.now() / 1000) - (10 * 60)) // minus ten minutes to make sure subgraph is fully synced
 
       try {
         let lastTimestamp: any = await db.get('lastTimestamp')
@@ -106,7 +107,7 @@ async function main (options: any) {
       if (shouldCheckpoint) {
         console.log('checkpointing')
         await controller.copyRootDataToOutputRepo(rootHash)
-        console.log('pushing merkle data from disk to repo')
+        console.log('pushing merkle data from disk to repo', { startTimestamp, endTimestamp, rootHash, totalFormatted })
         const { alreadyUpdated, githubUrl } = await controller.pushOutputToRemoteRepo()
         lastCheckpointMs = Date.now()
         console.log('alreadyUpdated:', alreadyUpdated)
@@ -117,6 +118,8 @@ async function main (options: any) {
             Github url: ${githubUrl}
             New root hash: ${rootHash}
             New root total amount: ${totalFormatted}
+            Start timestamp: ${startTimestamp}
+            End timestamp: ${endTimestamp}
           `.trim())
         }
         const shouldPost = !alreadyUpdated && options.postForum
@@ -134,6 +137,8 @@ async function main (options: any) {
              Forum url: ${postUrl}
              New root hash: ${rootHash}
              New root total amount: ${totalFormatted}
+             Start timestamp: ${startTimestamp}
+             End timestamp: ${endTimestamp}
             `.trim())
           } catch (err) {
             console.error('post to forum failed:', err)

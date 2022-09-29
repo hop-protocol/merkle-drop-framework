@@ -24,7 +24,10 @@ async function main (options: any = {}) {
   const startTimestamp = Number(options.startTimestamp) || Math.floor((Date.now()/1000) - 60 * 60)
   const endTimestamp = Number(options.endTimestamp) || Math.floor(Date.now()/1000)
 
+  // TODO: clean up (SoC)
+  const { OptimismFeeRefund } = require('../instances/feeRefund/FeeRefund')
   const controller = new Controller(options.network, options.rewardsContract, options.rewardsContractNetwork)
+  const feeRefund = new OptimismFeeRefund(controller)
 
   console.log('network:', options.network)
   console.log('rewardsContract:', options.rewardsContract)
