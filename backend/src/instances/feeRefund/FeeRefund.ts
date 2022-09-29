@@ -29,7 +29,8 @@ export class OptimismFeeRefund {
     const merkleRewardsContractAddress = this.controller.rewardsContractAddress
     const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
 
-    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount }
+    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount, endTimestamp }
+    console.log('feeRefund pkg config:', _config)
     const feeRefund = new FeeRefund(_config)
 
     const id = Date.now()

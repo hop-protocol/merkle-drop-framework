@@ -8,7 +8,8 @@ export async function forumPost (postTitle: string, postContent: string) {
   const form = new URLSearchParams({
     title: postTitle,
     raw: postContent,
-    archetype: 'regular'
+    archetype: 'regular',
+    category: 'automated'
   })
 
   if (!forumUsername) {

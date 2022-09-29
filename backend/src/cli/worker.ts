@@ -16,7 +16,7 @@ program
   .option('--poll-interval <value>', 'Poll interval in seconds')
   .option('--checkpoint-interval <value>', 'Checkpoint interval in seconds')
   .option('--post-forum [boolean]', 'Set to true to post to forum')
-  .option('--no-checkpoint [boolean]', 'Set to true to not push to github')
+  .option('--noCheckpoint [boolean]', 'Set to true to not push to github')
   .option('--server', 'Start server')
   .action(async (source: any) => {
     try {
@@ -52,7 +52,7 @@ async function main (options: any) {
       // const changed = await controller.pullRewardsDataFromRepo()
 
       let startTimestamp = Number(options.startTimestamp) || Math.floor((Date.now() / 1000) - 60 * 60)
-      let endTimestamp = Number(options.endTimestamp) || (Math.floor(Date.now() / 1000) - (10 * 60)) // minus ten minutes to make sure subgraph is fully synced
+      let endTimestamp = Number(options.endTimestamp) || (Math.floor(Date.now() / 1000) - (1 * 60)) // minus 1 minute to make sure subgraph is synced
 
       try {
         let lastTimestamp: any = await db.get('lastTimestamp')
@@ -102,7 +102,10 @@ async function main (options: any) {
       console.log('total:', `${totalFormatted}`)
 
       const isExpired = (lastCheckpointMs || startTimestamp) + checkpointIntervalMs < Date.now()
-      const shouldCheckpoint = !options.noCheckpoint && isExpired && rootHash !== '0x'
+      let shouldCheckpoint = isExpired && rootHash !== '0x'
+      if (options.noCheckpoint) {
+        shouldCheckpoint = false
+      }
       console.log('shouldCheckpoint:', shouldCheckpoint)
       if (shouldCheckpoint) {
         console.log('checkpointing')

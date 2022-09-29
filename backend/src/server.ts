@@ -32,7 +32,7 @@ export async function startServer () {
         throw new Error('address is requred')
       }
       address = getAddress(address)
-      console.log('address:', address)
+      // console.log('address:', address)
       const rewards = await controller.getRewardsForAccount(address)
       const data = {
         address,

@@ -267,6 +267,13 @@ export class Controller {
 
     const { data } = await this.getData(options)
 
+    let sum = BigNumber.from(0)
+    for (const addr in data) {
+      sum = sum.add(BigNumber.from(data[addr]))
+    }
+
+    console.log('sum:', sum.toString())
+
     const json: any[] = []
     for (const address in data) {
       json.push([address, { balance: data[address] }])
