@@ -1,6 +1,8 @@
 {
   "short_name": "MDF",
   "name": "Merkle Drop Framework",
+  "description": "Generalized UI merkle drop framework contract interactions",
+  "iconPath": "/logo512.png",
   "icons": [
     {
       "src": "favicon.ico",
