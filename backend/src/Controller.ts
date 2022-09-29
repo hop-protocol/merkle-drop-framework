@@ -75,11 +75,12 @@ export class Controller {
       throw new Error('REWARDS_CONTRACT_NETWORK is required')
     }
 
+    this.rpcUrls = allRpcUrls[network]
+
     if (!this.rpcUrls[rewardsContractNetwork]) {
       throw new Error('invalid rewardsContractNetwork')
     }
 
-    this.rpcUrls = allRpcUrls[network]
     console.log(this.rpcUrls)
 
     const provider = new providers.StaticJsonRpcProvider(this.rpcUrls[rewardsContractNetwork])
