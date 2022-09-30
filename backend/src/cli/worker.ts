@@ -52,7 +52,7 @@ async function main (options: any) {
       // const changed = await controller.pullRewardsDataFromRepo()
 
       let startTimestamp = Number(options.startTimestamp) || Math.floor((Date.now() / 1000) - 60 * 60)
-      let endTimestamp = Number(options.endTimestamp) || (Math.floor(Date.now() / 1000) - (1 * 60)) // minus 1 minute to make sure subgraph is synced
+      let endTimestamp = Number(options.endTimestamp) || Math.floor(Date.now() / 1000)
 
       try {
         let lastTimestamp: any = await db.get('lastTimestamp')
@@ -95,7 +95,8 @@ async function main (options: any) {
         shouldWrite: true,
         writePath,
         startTimestamp,
-        endTimestamp
+        endTimestamp,
+        setLatest: true
       })
 
       console.log('root:', rootHash)
@@ -108,6 +109,15 @@ async function main (options: any) {
       }
       console.log('shouldCheckpoint:', shouldCheckpoint)
       if (shouldCheckpoint) {
+        endTimestamp = Math.floor(DateTime.fromSeconds(Math.floor(Date.now() / 1000)).toUTC().minus({ days: 1 }).startOf('hour').toSeconds())
+        const { rootHash, totalFormatted } = await controller.generateRoot({
+          shouldWrite: true,
+          writePath,
+          startTimestamp,
+          endTimestamp
+        })
+        console.log('generated', { rootHash, totalFormatted, startTimestamp, endTimestamp })
+
         console.log('checkpointing')
         await controller.copyRootDataToOutputRepo(rootHash)
         console.log('pushing merkle data from disk to repo', { startTimestamp, endTimestamp, rootHash, totalFormatted })

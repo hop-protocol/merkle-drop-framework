@@ -44,7 +44,7 @@ export class OptimismFeeRefund {
     const result = await feeRefund.calculateFees(endTimestamp)
 
     console.timeEnd('calculateFees ' + id)
-    console.log('getData done:', result)
+    console.log('getData done:', JSON.stringify(result))
     return { data: result }
   }
 

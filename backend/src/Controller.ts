@@ -299,8 +299,10 @@ export class Controller {
       if (fs.existsSync(outDirectory) && outDirectory.startsWith('/tmp')) {
         fs.rmSync(outDirectory, { recursive: true, force: true })
       }
-      const latestFile = path.resolve(writeToPath, 'latest.json')
-      fs.writeFileSync(latestFile, JSON.stringify({ root: rootHash }))
+      if (options.setLatest) {
+        const latestFile = path.resolve(writeToPath, 'latest.json')
+        fs.writeFileSync(latestFile, JSON.stringify({ root: rootHash }))
+      }
     }
     const onchainPreviousTotalAmount = await this.contract.currentTotalRewards()
     // const additionalAmount = timestampRangeTotal
