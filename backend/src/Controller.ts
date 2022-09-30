@@ -597,7 +597,7 @@ export class Controller {
 
     fse.copySync(folderToCopy, outPath)
 
-    fse.copySync(path.resolve(outputMerklePath, 'latest.json'), path.resolve(config.outputRepoPath, 'latest.json'))
+    fs.writeFileSync(path.resolve(config.outputRepoPath, 'latest.json'), JSON.stringify({ root: rootHash }))
 
     console.log('done copying')
   }
