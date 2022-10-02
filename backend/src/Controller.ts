@@ -77,7 +77,7 @@ export class Controller {
       throw new Error('invalid rewardsContractNetwork')
     }
 
-    console.log(this.rpcUrls)
+    console.log('rpcUrls', this.rpcUrls)
 
     const provider = new providers.StaticJsonRpcProvider(this.rpcUrls[rewardsContractNetwork])
 
@@ -272,7 +272,7 @@ export class Controller {
       sum = sum.add(BigNumber.from(data[addr]))
     }
 
-    console.log('sum:', sum.toString())
+    // console.log('sum:', sum.toString())
 
     const json: any[] = []
     for (const address in data) {

@@ -29,6 +29,7 @@ async function main (options: any = {}) {
   const controller = new Controller(options.network, options.rewardsContract, options.rewardsContractNetwork)
   const feeRefund = new OptimismFeeRefund(controller)
 
+  console.log('source code:', 'https://github.com/hop-protocol/merkle-drop-framework')
   console.log('network:', options.network)
   console.log('rewardsContract:', options.rewardsContract)
   console.log('startTimestamp:', startTimestamp)
