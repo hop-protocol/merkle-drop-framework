@@ -1,4 +1,6 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
+import gnosisModule from '@web3-onboard/gnosis'
+// import { useSafeAppsSDK } from '@gnosis.pm/safe-apps-react-sdk'
 import { useInterval } from 'react-use'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -13,8 +15,44 @@ import merkleRewardsAbi from './abi/MerkleRewards.json'
 import { ShardedMerkleTree } from './merkle'
 import erc20Abi from '@hop-protocol/core/abi/generated/ERC20.json'
 import { useQueryParams } from './hooks/useQueryParams'
+import Onboard from '@web3-onboard/core'
+import injectedModule from '@web3-onboard/injected-wallets'
+
+const injected = injectedModule()
+const gnosis = gnosisModule()
+
+const onboard = Onboard({
+  wallets: [injected, gnosis],
+  chains: [
+    {
+      id: '0x1',
+      token: 'ETH',
+      label: 'Ethereum Mainnet',
+      rpcUrl: 'https://mainnet.infura.io/v3/84842078b09946638c03157f83405213'
+    },
+    {
+      id: '0x5',
+      token: 'ETH',
+      label: 'Goerli',
+      rpcUrl: 'https://goerli.infura.io/v3/84842078b09946638c03157f83405213'
+    },
+    {
+      id: '0xA',
+      token: 'ETH',
+      label: 'Optimism',
+      rpcUrl: 'https://mainnet.optimism.io'
+    },
+    {
+      id: '0x1A4',
+      token: 'ETH',
+      label: 'Optimism Goerli',
+      rpcUrl: 'https://goerli.optimism.io'
+    }
+  ]
+})
 
 function App () {
+  // const { sdk, connected, safe } = useSafeAppsSDK()
   const { queryParams, updateQueryParams } = useQueryParams()
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -47,6 +85,7 @@ function App () {
     return ''
   })
   const [calldata, setCalldata] = useState('')
+  const [approvalCalldata, setApprovalCalldata] = useState('')
   const [rewardsContractAddress, setRewardsContractAddress] = useState(() => {
     try {
       return queryParams.rewardsContract as string || localStorage.getItem('rewardsContractAddress') || ''
@@ -54,11 +93,25 @@ function App () {
     }
     return ''
   })
-  const [wallet] = useState(() => {
-    if ((window as any).ethereum) {
-      return new providers.Web3Provider((window as any).ethereum, 'any').getSigner()
+  const [owner, setOwner] = useState('')
+  const [onboardWallet, setOnboardWallet] = useState<any>()
+  const [wallet, setWallet] = useState<any>()
+
+  async function onboardConnect() {
+    const wallets = await onboard.connectWallet()
+    if (wallets[0]) {
+      setOnboardWallet(wallets[0])
+      const ethersProvider = new providers.Web3Provider(
+        wallets[0].provider,
+        'any'
+      )
+      const signer = ethersProvider.getSigner()
+      setWallet(signer)
+    } else {
+      setOnboardWallet(null)
     }
-  })
+  }
+
   const [provider] = useState(() => {
     try {
       return new providers.Web3Provider((window as any).ethereum)
@@ -75,6 +128,18 @@ function App () {
       console.error(err)
     }
   }, [provider, wallet, rewardsContractAddress])
+
+  useEffect(() => {
+    async function update() {
+      if (contract) {
+        const owner = await contract.owner()
+        setOwner(owner)
+      } else {
+        setOwner('')
+      }
+    }
+    update().catch(console.error)
+  }, [contract])
 
   useEffect(() => {
     async function update() {
@@ -321,6 +386,8 @@ function App () {
         return
       }
       await checkCorrectNetwork()
+      await onboardConnect()
+      /*
       try {
         await provider.send('eth_requestAccounts', [])
       } catch (err) {
@@ -331,8 +398,17 @@ function App () {
       } catch (err) {
         console.error(err)
       }
+      */
     } catch (err: any) {
       setError(err.message)
+    }
+  }
+
+  async function disconnect () {
+    try {
+      await onboard.disconnectWallet(onboardWallet)
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -394,7 +470,34 @@ console.log(claimRecipient, totalAmount, proof)
       const { root, total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, latestRoot)
       const totalAmount = BigNumber.from(total)
       const calldata = await contract.populateTransaction.setMerkleRoot(latestRoot, totalAmount)
+      if (owner && calldata) {
+        calldata.from = owner
+      }
       setCalldata(JSON.stringify(calldata, null, 2))
+    } catch (err: any) {
+      console.error(err)
+      setError(err.message)
+    }
+  }
+
+  async function getApprovalCalldata() {
+    try {
+      if (!contract) {
+        return
+      }
+      await checkCorrectNetwork()
+
+      const { total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, latestRoot)
+      const totalAmount = BigNumber.from(total)
+
+      const previousTotalRewards = await contract.currentTotalRewards()
+      const additionalAmount = totalAmount.sub(previousTotalRewards)
+      const spender = contract.address
+      const calldata = await token.populateTransaction.approve(spender, additionalAmount)
+      if (owner && calldata) {
+        calldata.from = owner
+      }
+      setApprovalCalldata(JSON.stringify(calldata, null, 2))
     } catch (err: any) {
       console.error(err)
       setError(err.message)
@@ -459,7 +562,7 @@ console.log(claimRecipient, totalAmount, proof)
       const allowance = await token.allowance(address, spender)
       if (allowance.lt(totalAmount)) {
         console.log('approving token')
-        const _tx = await token.connect(wallet).approve(spender, parseUnits('100', tokenDecimals))
+        const _tx = await token.connect(wallet).approve(spender, additionalAmount)
         await _tx.wait()
       }
       console.log('sending setMerkleRoot tx')
@@ -529,35 +632,52 @@ console.log(claimRecipient, totalAmount, proof)
               rewards token account balance: {rewardsTokenAccountBalance}
             </Typography>
           </Box>
+          <Box mb={2} display="flex">
+            <Typography variant="body2">
+              contract owner: {owner}
+            </Typography>
+          </Box>
         </Box>
         {!address && (
           <Box mb={4}>
             <Button onClick={connect} variant="contained">Connect</Button>
           </Box>
         )}
-        <Box mb={4} display="flex" flexDirection="column">
-          <Box mb={2}>
-            <TextField style={{ width: '420px' }} value={requiredChainId.toString()} onChange={(event: any) => {
-              setRequiredChainId(Number(event.target.value))
-            }} label="Contract Chain ID" placeholder="5" />
+        <Box mb={4} p={4} style={{
+          border: '1px solid #999'
+        }}>
+          <Box mb={4} display="flex" flexDirection="column">
+            <Box mb={2}>
+              <TextField style={{ width: '420px' }} value={requiredChainId.toString()} onChange={(event: any) => {
+                setRequiredChainId(Number(event.target.value))
+              }} label="Contract Chain ID" placeholder="5" />
+            </Box>
           </Box>
-        </Box>
-        <Box mb={4} display="flex" flexDirection="column">
-          <Box mb={2}>
-            <TextField style={{ width: '420px' }} value={rewardsContractAddress} onChange={(event: any) => {
-              setRewardsContractAddress(event.target.value)
-            }} label="Merkle rewards contract address" placeholder="0x..."/>
+          <Box mb={4} display="flex" flexDirection="column">
+            <Box mb={2}>
+              <TextField style={{ width: '420px' }} value={rewardsContractAddress} onChange={(event: any) => {
+                setRewardsContractAddress(event.target.value)
+              }} label="Merkle rewards contract address" placeholder="0x..."/>
+            </Box>
           </Box>
-        </Box>
-        <Box mb={4} display="flex" flexDirection="column">
-          <Box mb={2}>
-            <TextField style={{ width: '520px' }} value={merkleBaseUrl} onChange={(event: any) => {
-              setMerkleBaseUrl(event.target.value.replace(/\/$/, ''))
-            }} label="Merkle data repo base url" placeholder="https://raw.githubusercontent.com/hop-protocol/merkle-data-output/master"/>
+          <Box mb={4} display="flex" flexDirection="column">
+            <Box mb={2}>
+              <TextField style={{ width: '520px' }} value={merkleBaseUrl} onChange={(event: any) => {
+                setMerkleBaseUrl(event.target.value.replace(/\/$/, ''))
+              }} label="Merkle data repo base url" placeholder="https://raw.githubusercontent.com/hop-protocol/merkle-data-output/master"/>
+            </Box>
           </Box>
         </Box>
         {!!wallet && (
-          <Box mb={4} display="flex" flexDirection="column">
+          <Box mb={4} p={4} style={{
+            border: '1px solid #999'
+          }}>
+          <Box display="flex" flexDirection="column">
+            <Box mb={2}>
+              <Typography variant="body2">
+                Claim tokens for an address
+              </Typography>
+            </Box>
             <Box mb={2}>
               <TextField style={{ width: '420px' }} value={claimRecipient} onChange={(event: any) => {
                 setClaimRecipient(event.target.value)
@@ -574,21 +694,66 @@ console.log(claimRecipient, totalAmount, proof)
               </Box>
             )}
           </Box>
-        )}
-        <Box mb={4}>
-          <Box mb={2}>
-            <Button onClick={getCalldata} variant="contained">Get setMerkleRoot calldata</Button>
           </Box>
-          {!!calldata && (
-            <Box>
-              <TextField style={{ width: '500px' }} multiline value={calldata} />
+        )}
+        <Box mb={4} p={4} style={{
+          border: '1px solid #999'
+        }}>
+          <Box display="flex" flexDirection="column">
+            <Box mb={2}>
+              <Typography variant="body2">
+                Get tx data json for setting merkle root {latestRoot} ({latestRootTotal})
+              </Typography>
             </Box>
+            <Box mb={2}>
+              <Button onClick={getCalldata} variant="contained">Get setMerkleRoot calldata</Button>
+            </Box>
+            {!!calldata && (
+              <Box>
+                <TextField style={{ width: '500px' }} multiline value={calldata} />
+              </Box>
+            )}
+          </Box>
+        </Box>
+          {!!address && (
+            <Box mb={4} p={4} style={{
+              border: '1px solid #999'
+            }}>
+            <Box mb={2}>
+              <Typography variant="body2">
+                Set onchain merkle root to {latestRoot} ({latestRootTotal})
+              </Typography>
+            </Box>
+            <Box mb={4}>
+              <Box mb={2}>
+                <Button onClick={setMerkleRootTx} variant="contained">setMerkleRoot</Button>
+              </Box>
+            </Box>
+           </Box>
           )}
+        <Box mb={4} p={4} style={{
+          border: '1px solid #999'
+        }}>
+          <Box display="flex" flexDirection="column">
+            <Box mb={2}>
+              <Typography variant="body2">
+                Get approval tx data json
+              </Typography>
+            </Box>
+            <Box mb={2}>
+              <Button onClick={getApprovalCalldata} variant="contained">Get approval calldata</Button>
+            </Box>
+            {!!approvalCalldata && (
+              <Box>
+                <TextField style={{ width: '500px' }} multiline value={approvalCalldata} />
+              </Box>
+            )}
+          </Box>
         </Box>
         {!!address && (
           <Box mb={4}>
             <Box mb={2}>
-              <Button onClick={setMerkleRootTx} variant="contained">setMerkleRoot</Button>
+              <Button onClick={disconnect}>disconnect</Button>
             </Box>
           </Box>
         )}
