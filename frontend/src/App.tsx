@@ -489,11 +489,8 @@ console.log(claimRecipient, totalAmount, proof)
 
       const { total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, latestRoot)
       const totalAmount = BigNumber.from(total)
-
-      const previousTotalRewards = await contract.currentTotalRewards()
-      const additionalAmount = totalAmount.sub(previousTotalRewards)
       const spender = contract.address
-      const calldata = await token.populateTransaction.approve(spender, additionalAmount)
+      const calldata = await token.populateTransaction.approve(spender, totalAmount)
       if (owner && calldata) {
         calldata.from = owner
       }
@@ -704,6 +701,25 @@ console.log(claimRecipient, totalAmount, proof)
           <Box display="flex" flexDirection="column">
             <Box mb={2}>
               <Typography variant="body2">
+                Get approval tx data json
+              </Typography>
+            </Box>
+            <Box mb={2}>
+              <Button onClick={getApprovalCalldata} variant="contained">Get approval calldata</Button>
+            </Box>
+            {!!approvalCalldata && (
+              <Box>
+                <TextField style={{ width: '500px' }} multiline value={approvalCalldata} />
+              </Box>
+            )}
+          </Box>
+        </Box>
+        <Box mb={4} p={4} style={{
+          border: '1px solid #999'
+        }}>
+          <Box display="flex" flexDirection="column">
+            <Box mb={2}>
+              <Typography variant="body2">
                 Get tx data json for setting merkle root {latestRoot} ({latestRootTotal})
               </Typography>
             </Box>
@@ -733,25 +749,6 @@ console.log(claimRecipient, totalAmount, proof)
             </Box>
            </Box>
           )}
-        <Box mb={4} p={4} style={{
-          border: '1px solid #999'
-        }}>
-          <Box display="flex" flexDirection="column">
-            <Box mb={2}>
-              <Typography variant="body2">
-                Get approval tx data json
-              </Typography>
-            </Box>
-            <Box mb={2}>
-              <Button onClick={getApprovalCalldata} variant="contained">Get approval calldata</Button>
-            </Box>
-            {!!approvalCalldata && (
-              <Box>
-                <TextField style={{ width: '500px' }} multiline value={approvalCalldata} />
-              </Box>
-            )}
-          </Box>
-        </Box>
         {!!address && (
           <Box mb={4}>
             <Box mb={2}>
