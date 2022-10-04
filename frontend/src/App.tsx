@@ -574,6 +574,8 @@ console.log(claimRecipient, totalAmount, proof)
     }
   }
 
+  const canClaim  = !!wallet && onchainRoot && onchainRoot !== '0x0000000000000000000000000000000000000000000000000000000000000000'
+
   return (
     <Box>
       <Box width="400px" p={4} m="0 auto" display="flex" flexDirection="column" justifyContent="center" alignItems="center">
@@ -668,7 +670,7 @@ console.log(claimRecipient, totalAmount, proof)
             </Box>
           </Box>
         </Box>
-        {!!wallet && (
+        {canClaim && (
           <Box mb={4} p={4} style={{
             border: '1px solid #999'
           }}>
