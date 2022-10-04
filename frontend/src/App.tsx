@@ -558,13 +558,73 @@ console.log(claimRecipient, totalAmount, proof)
       const spender = contract.address
       const allowance = await token.allowance(address, spender)
       if (allowance.lt(totalAmount)) {
-        console.log('approving token')
-        const _tx = await token.connect(wallet).approve(spender, additionalAmount)
-        await _tx.wait()
+        throw new Error('approval needed first')
       }
       console.log('sending setMerkleRoot tx')
       const tx = await contract.setMerkleRoot(latestRoot, totalAmount)
       setSuccess(`Sent ${tx.hash}`)
+    } catch (err: any) {
+      console.error(err)
+      setError(err.message)
+    }
+  }
+
+  async function setApprovalTx() {
+    try {
+      if (!wallet) {
+        return
+      }
+      if (!contract) {
+        return
+      }
+      if (!provider) {
+        return
+      }
+      if (!address) {
+        return
+      }
+      if (!latestRoot) {
+        return
+      }
+      if (!merkleBaseUrl) {
+        return
+      }
+      if (!token) {
+        return
+      }
+      if (!tokenDecimals) {
+        return
+      }
+      await checkCorrectNetwork()
+
+      const owner = await contract.owner()
+      if (owner.toLowerCase() !== address.toLowerCase()) {
+        throw new Error(`connected account must be contract owner. expected: ${owner}, got: ${address}`)
+      }
+
+      const { total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, latestRoot)
+      const totalAmount = BigNumber.from(total)
+
+      const previousTotalRewards = await contract.currentTotalRewards()
+      if (totalAmount.lt(previousTotalRewards)) {
+        throw new Error(`new totalAmount (${formatUnits(totalAmount.toString(), tokenDecimals)}) must be greater than previousTotalRewards (${formatUnits(previousTotalRewards.toString(), tokenDecimals)})`)
+      }
+
+      const tokenBalance = await token.balanceOf(address)
+      const additionalAmount = totalAmount.sub(previousTotalRewards)
+      if (tokenBalance.lt(additionalAmount)) {
+        throw new Error(`not enough rewards token balance to set merkle root. expected, ${formatUnits(additionalAmount.toString(), tokenDecimals)}, got: ${formatUnits(tokenBalance.toString(), tokenDecimals)}`)
+      }
+
+      const spender = contract.address
+      const allowance = await token.allowance(address, spender)
+      if (allowance.lt(totalAmount)) {
+        console.log('approving token')
+        const tx = await token.connect(wallet).approve(spender, additionalAmount)
+        setSuccess(`Sent approval ${tx.hash}`)
+      } else {
+        alert('no approval needed')
+      }
     } catch (err: any) {
       console.error(err)
       setError(err.message)
@@ -714,6 +774,22 @@ console.log(claimRecipient, totalAmount, proof)
             )}
           </Box>
         </Box>
+          {!!address && (
+            <Box mb={4} p={4} style={{
+              border: '1px solid #999'
+            }}>
+            <Box mb={2}>
+              <Typography variant="body2">
+                Set approval
+              </Typography>
+            </Box>
+            <Box mb={4}>
+              <Box mb={2}>
+                <Button onClick={setApprovalTx} variant="contained">approve</Button>
+              </Box>
+            </Box>
+           </Box>
+          )}
         <Box mb={4} p={4} style={{
           border: '1px solid #999'
         }}>
