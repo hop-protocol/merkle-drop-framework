@@ -748,7 +748,9 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
       this.checkpointIntervalMs = config.checkpointIntervalMs
     }
 
-    const defaultTimeMs = (24 * 60 * 60 * 1000)
+    const oneHour = 60 * 60 * 1000
+    const oneDay = oneHour * 24
+    const defaultTimeMs = oneDay
     if (!this.checkpointIntervalMs) {
       console.log('this.checkpointIntervalMs not set')
       return defaultTimeMs
@@ -759,11 +761,11 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
       return this.checkpointIntervalMs
     }
     const timeTilNextCheckpointMs = this.checkpointIntervalMs - (Date.now() - lastCheckpointMs)
-    if (timeTilNextCheckpointMs < defaultTimeMs) {
-      console.log('timeTilNextCheckpointMs < 0', this.checkpointIntervalMs, Date.now(), lastCheckpointMs)
+    if (timeTilNextCheckpointMs < oneHour) {
+      console.log('timeTilNextCheckpointMs < 0', timeTilNextCheckpointMs, this.checkpointIntervalMs, Date.now(), lastCheckpointMs, (Date.now() - lastCheckpointMs))
       return defaultTimeMs
     }
-    return timeTilNextCheckpointMs
+    return timeTilNextCheckpointMs + oneDay // one day extra time in order for multisig signers to publish root on chain
   }
 
   getSanitizedGithubUrl (githubUrl: string) {

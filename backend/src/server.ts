@@ -4,6 +4,7 @@ import cors from 'cors'
 import { ipRateLimitMiddleware } from './rateLimit'
 import { getAddress } from 'ethers/lib/utils'
 import { responseCache } from './responseCache'
+import { DateTime } from 'luxon'
 
 export async function startServer () {
   const { controller, setAdditionalRoutes } = require('./instance')
@@ -54,12 +55,21 @@ export async function startServer () {
         controller.getLockedRewards()
       ])
       const estimatedDateMs = Date.now() + estimatedTimeMsTilCheckpoint
+
+      const end = DateTime.fromMillis(estimatedDateMs)
+      const now = DateTime.now()
+      const remaining = end.diff(now)
+      const countdownFormatted = remaining.toFormat("d'd' h'h' m'm' ss")
+
       const data = {
         estimatedTimeMsTilCheckpoint,
         estimatedDateMs,
         lockedRoot: lockedRewards.root,
         lockedTotal: lockedRewards.total.toString(),
-        lockedTotalFormatted: lockedRewards.totalFormatted
+        lockedTotalFormatted: lockedRewards.totalFormatted,
+        countdownMs: remaining.seconds,
+        countdownFormatted,
+        checkpointIntervalMs: controller.checkpointIntervalMs
       }
 
       res.json({ data })
