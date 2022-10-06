@@ -54,22 +54,39 @@ export async function startServer () {
         controller.getRemainingTimeTilCheckpoint(),
         controller.getLockedRewards()
       ])
-      const estimatedDateMs = Date.now() + estimatedTimeMsTilCheckpoint
+
+      const oneDay = 24 * 60 * 60 * 1000
+      let estimatedDateMs = Date.now() + estimatedTimeMsTilCheckpoint
+      const estimatedDateRelative = DateTime.fromMillis(estimatedDateMs).toRelative()
+      const estimatedCheckpointEndTimestampMs = estimatedDateMs - oneDay
+      const estimatedCheckpointEndTimestampRelative = DateTime.fromMillis(estimatedCheckpointEndTimestampMs).toRelative()
+
+      estimatedDateMs = estimatedDateMs + oneDay // one day extra time in order for multisig signers to publish root on chain
 
       const end = DateTime.fromMillis(estimatedDateMs)
       const now = DateTime.now()
       const remaining = end.diff(now)
       const countdownFormatted = remaining.toFormat("d'd' h'h' m'm' ss")
+      const countdownRelative = end.toRelative()
 
       const data = {
         estimatedTimeMsTilCheckpoint,
         estimatedDateMs,
+        estimatedDateRelative,
         lockedRoot: lockedRewards.root,
-        lockedTotal: lockedRewards.total.toString(),
-        lockedTotalFormatted: lockedRewards.totalFormatted,
-        countdownMs: remaining.seconds,
+        lockedRootTotal: lockedRewards.totalAmount.toString(),
+        lockedRootTotalFormatted: lockedRewards.totalAmountFormatted,
+        lockedRootAdditionalAmount: lockedRewards.additionalAmount.toString(),
+        lockedRootAdditionalAmountFormatted: lockedRewards.additionalAmountFormatted,
+        countdownSeconds: remaining.seconds,
         countdownFormatted,
-        checkpointIntervalMs: controller.checkpointIntervalMs
+        countdownRelative,
+        checkpointIntervalMs: controller.checkpointIntervalMs,
+        estimatedCheckpointEndTimestampMs,
+        estimatedCheckpointEndTimestampRelative,
+        onchainRoot: lockedRewards.onchainRoot,
+        onchainRootTotalAmount: lockedRewards.onchainRootTotalAmount.toString(),
+        onchainRootTotalAmountFormatted: lockedRewards.onchainRootTotalAmountFormatted
       }
 
       res.json({ data })

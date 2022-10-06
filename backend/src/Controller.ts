@@ -765,7 +765,7 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
       console.log('timeTilNextCheckpointMs < 0', timeTilNextCheckpointMs, this.checkpointIntervalMs, Date.now(), lastCheckpointMs, (Date.now() - lastCheckpointMs))
       return defaultTimeMs
     }
-    return timeTilNextCheckpointMs + oneDay // one day extra time in order for multisig signers to publish root on chain
+    return timeTilNextCheckpointMs
   }
 
   getSanitizedGithubUrl (githubUrl: string) {
@@ -819,23 +819,38 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
 
   async getLockedRewards () {
     if (!config.outputMerklePath) {
-      throw new Error('OUTPUT_REPO_PATH is required')
+      throw new Error('OUTPUT_MERKLE_PATH is required')
     }
 
     try {
       const outDirectory = path.resolve(config.outputMerklePath)
       const { root } = JSON.parse(fs.readFileSync(path.resolve(outDirectory, 'latest.json'), 'utf8'))
       const { total } = JSON.parse(fs.readFileSync(path.resolve(outDirectory, root, 'root.json'), 'utf8'))
+      const onchainPreviousTotalAmount = await this.contract.currentTotalRewards()
+      const onchainRoot = await this.getOnchainRoot()
+      const totalAmount = BigNumber.from(total.toString())
+      const additionalAmount = totalAmount.sub(onchainPreviousTotalAmount)
       return {
         root,
-        total: BigNumber.from(total.toString()),
-        totalFormatted: Number(formatUnits(total.toString(), 18))
+        totalAmount,
+        totalAmountFormatted: Number(formatUnits(totalAmount.toString(), 18)),
+        additionalAmount,
+        additionalAmountFormatted: Number(formatUnits(additionalAmount.toString(), 18)),
+        onchainRoot,
+        onchainRootTotalAmount: onchainPreviousTotalAmount,
+        onchainRootTotalAmountFormatted: Number(formatUnits(onchainPreviousTotalAmount.toString(), 18))
       }
     } catch (err) {
       console.error('getLockedRewards error:', err)
       return {
         root: '0x',
-        total: BigNumber.from(0)
+        totalAmount: BigNumber.from(0),
+        totalAmountFormatted: 0,
+        additionalAmount: BigNumber.from(0),
+        additionalAmountFormatted: 0,
+        onchainRoot: '0x',
+        onchainRootTotalAmount: BigNumber.from(0),
+        onchainRootTotalAmountFormatted: 0
       }
     }
   }
