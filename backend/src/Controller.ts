@@ -792,14 +792,14 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
   async pruneMerkleDir () {
     console.log('pruning merkle dir')
     let root : string
-    const source = path.resolve(config.outputRepoPath)
+    const source = path.resolve(config.outputMerklePath)
     try {
       ({ root } = JSON.parse(fs.readFileSync(path.resolve(source, 'latest.json'), 'utf8')))
     } catch (err) {
     }
     const dirs = (await readdir(source, { withFileTypes: true }))
       .filter(item => item.isDirectory())
-      .map(item => path.resolve(config.outputRepoPath, item.name))
+      .map(item => path.resolve(config.outputMerklePath, item.name))
 
     const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000)
     for (const dirPath of dirs) {
