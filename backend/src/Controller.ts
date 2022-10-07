@@ -755,13 +755,33 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
       console.log('this.checkpointIntervalMs not set')
       return defaultTimeMs
     }
-    const lastCheckpointMs = await this.getLastRepoCheckpointMs()
+
+    let isLatestRootSetOnChain = true
+    try {
+      const onchainRoot = await this.getOnchainRoot()
+      const isSet = !BigNumber.from(onchainRoot).eq(BigNumber.from(0))
+      if (isSet) {
+        const outDirectory = path.resolve(config.outputRepoPath)
+        const { root } = JSON.parse(fs.readFileSync(path.resolve(outDirectory, 'latest.json'), 'utf8'))
+        if (root !== onchainRoot) {
+          isLatestRootSetOnChain = false
+        }
+      }
+    } catch (err) {
+    }
+
+    let lastCheckpointMs = await this.getLastRepoCheckpointMs()
     if (!lastCheckpointMs) {
       console.log('no lastCheckpointMs')
       return this.checkpointIntervalMs
     }
+
+    if (!isLatestRootSetOnChain) {
+      lastCheckpointMs = lastCheckpointMs - this.checkpointIntervalMs
+    }
+
     const timeTilNextCheckpointMs = this.checkpointIntervalMs - (Date.now() - lastCheckpointMs)
-    if (timeTilNextCheckpointMs < oneHour) {
+    if ((timeTilNextCheckpointMs + oneDay) < oneHour) {
       console.log('timeTilNextCheckpointMs < 0', timeTilNextCheckpointMs, this.checkpointIntervalMs, Date.now(), lastCheckpointMs, (Date.now() - lastCheckpointMs))
       return defaultTimeMs
     }
