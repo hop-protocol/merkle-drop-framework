@@ -9,7 +9,7 @@ import Alert from '@mui/material/Alert'
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import './App.css'
-import { Contract, BigNumber, providers } from 'ethers'
+import { Contract, BigNumber, providers, constants } from 'ethers'
 import { parseUnits, formatEther, formatUnits } from 'ethers/lib/utils'
 import merkleRewardsAbi from './abi/MerkleRewards.json'
 import { ShardedMerkleTree } from './merkle'
@@ -487,10 +487,8 @@ console.log(claimRecipient, totalAmount, proof)
       }
       await checkCorrectNetwork()
 
-      const { total } = await ShardedMerkleTree.fetchRootFile(merkleBaseUrl, latestRoot)
-      const totalAmount = BigNumber.from(total)
       const spender = contract.address
-      const calldata = await token.populateTransaction.approve(spender, totalAmount)
+      const calldata = await token.populateTransaction.approve(spender, constants.MaxUint256)
       if (owner && calldata) {
         calldata.from = owner
       }
@@ -618,9 +616,9 @@ console.log(claimRecipient, totalAmount, proof)
 
       const spender = contract.address
       const allowance = await token.allowance(address, spender)
-      if (allowance.lt(totalAmount)) {
+      if (allowance.lt(additionalAmount)) {
         console.log('approving token')
-        const tx = await token.connect(wallet).approve(spender, additionalAmount)
+        const tx = await token.connect(wallet).approve(spender, constants.MaxUint256)
         setSuccess(`Sent approval ${tx.hash}`)
       } else {
         alert('no approval needed')
