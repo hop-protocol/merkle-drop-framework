@@ -781,10 +781,13 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
     }
 
     const timeTilNextCheckpointMs = this.checkpointIntervalMs - (Date.now() - lastCheckpointMs)
+    /*
     if ((timeTilNextCheckpointMs + oneDay) < oneHour) {
       console.log('timeTilNextCheckpointMs < 0', timeTilNextCheckpointMs, this.checkpointIntervalMs, Date.now(), lastCheckpointMs, (Date.now() - lastCheckpointMs))
       return defaultTimeMs
     }
+    */
+
     return timeTilNextCheckpointMs
   }
 
