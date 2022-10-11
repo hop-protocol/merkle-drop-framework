@@ -62,13 +62,15 @@ export function setAdditionalRoutes (app: any) {
         bonderFeeUsd,
         ammFeeUsd
       } = await feeRefund.getRefundAmount(transfer)
+
+      const negativeBuffer = 0.80 // minus 20% for UI estimate
       const data = {
         refund: {
           costInUsd: totalUsdCost,
           costInRefundToken: refundAmount,
           refundTokenPrice: price,
-          refundAmountInRefundToken: refundAmountAfterDiscount,
-          refundAmountInUsd: refundAmountAfterDiscountUsd,
+          refundAmountInRefundToken: refundAmountAfterDiscount * negativeBuffer,
+          refundAmountInUsd: refundAmountAfterDiscountUsd * negativeBuffer,
           refundTokenSymbol,
           sourceTxCostUsd,
           bonderFeeUsd,
