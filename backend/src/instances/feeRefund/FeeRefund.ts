@@ -2,7 +2,7 @@ import { FeeRefund } from '@hop-protocol/fee-refund'
 import fs from 'fs'
 import path from 'path'
 
-const feesDbPath = process.env.FEES_DB_PATH || __dirname
+const feesDbPath = process.env.FEES_DB_PATH || '/tmp/feesdb'
 
 export class OptimismFeeRefund {
   controller: any
@@ -129,5 +129,16 @@ export class OptimismFeeRefund {
       bonderFeeUsd,
       ammFeeUsd
     }
+  }
+
+  async getTokenPrice (tokenSymbol: string, timestamp: number, startTimestamp: number) {
+    const dbDir = path.resolve(feesDbPath, 'db')
+    const merkleRewardsContractAddress = this.controller.rewardsContractAddress
+    const refundTokenSymbol = await this.controller.getTokenSymbol()
+    const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
+    const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
+    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount }
+    const feeRefund = new FeeRefund(_config)
+    return feeRefund.getTokenPrice(tokenSymbol, timestamp)
   }
 }

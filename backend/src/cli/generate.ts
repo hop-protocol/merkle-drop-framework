@@ -1,6 +1,7 @@
 import { program } from 'commander'
 import { Controller } from '../Controller'
 import { formatUnits } from 'ethers/lib/utils'
+import { DateTime } from 'luxon'
 
 program
   .command('generate')
@@ -11,6 +12,7 @@ program
   .option('--network <network>', 'Network chain, (ie optimism)')
   .option('--rewards-contract <address>', 'Rewards contract address')
   .option('--rewards-contract-network <network>', 'Rewards contract network')
+  .option('--log-token-prices [boolean]', 'Log token prices')
   .action(async (source: any) => {
     try {
       await main(source)
@@ -42,4 +44,16 @@ async function main (options: any = {}) {
   console.log('onchainPreviousTotalAmount:', `${onchainPreviousTotalAmount.toString()} (${formatUnits(onchainPreviousTotalAmount.toString(), 18)})`)
   console.log('calldata:', JSON.stringify(calldata))
   console.log('done')
+
+  if (options.logTokenPrices) {
+    const tokens = ['OP', 'ETH', 'USDC', 'USDT', 'DAI']
+    for (const token of tokens) {
+      for (let i = 1; i < 14; i++) {
+        const dt = DateTime.now().toUTC().startOf('day').minus({ days: i })
+        const timestamp = Math.floor(dt.toSeconds())
+        const tokenPrice = await feeRefund.getTokenPrice(token, timestamp, startTimestamp)
+        console.log('tokenPrice:', token, tokenPrice, dt.toString(), timestamp)
+      }
+    }
+  }
 }

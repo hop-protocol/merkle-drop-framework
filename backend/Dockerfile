@@ -6,7 +6,7 @@ RUN npm run build
 
 FROM node:18
 WORKDIR /usr/src/app
-RUN npm install -g npm@8.17.0
+RUN npm install -g npm@latest
 COPY --from=build /usr/src/app/node_modules /usr/src/app/node_modules
 COPY --from=build /usr/src/app/dist /usr/src/app/dist
 COPY --from=build /usr/src/app/package.json /usr/src/app/package.json
