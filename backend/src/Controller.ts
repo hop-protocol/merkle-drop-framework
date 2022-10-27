@@ -447,7 +447,7 @@ export class Controller {
         const withdrawn = await this.getWithdrawn(account)
         amount = total.sub(withdrawn)
       } catch (err) {
-        console.error('tree error (possibly no entry for account as expected):', err)
+        // console.error('tree error (possibly no entry for account as expected):', err)
       }
     }
 
@@ -756,6 +756,7 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
       return defaultTimeMs
     }
 
+    // console.log('getRemainingTimeTilCheckpoint getting onchainRoot')
     let isLatestRootSetOnChain = true
     try {
       const onchainRoot = await this.getOnchainRoot()
@@ -769,6 +770,8 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
       }
     } catch (err) {
     }
+
+    // console.log('getRemainingTimeTilCheckpoint getting getLastRepoCheckpointMs')
 
     let lastCheckpointMs = await this.getLastRepoCheckpointMs()
     if (!lastCheckpointMs) {

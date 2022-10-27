@@ -79,7 +79,9 @@ export function setAdditionalRoutes (app: any) {
       }
       res.status(200).json({ status: 'ok', data })
     } catch (err) {
-      console.error('/refund-amount request error:', err)
+      if (!/Invalid Entry/gi.test(err?.message)) {
+        console.error('/refund-amount request error:', err)
+      }
       res.status(400).json({ error: err.message })
     }
   })

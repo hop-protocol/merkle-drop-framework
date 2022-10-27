@@ -50,10 +50,13 @@ export async function startServer () {
 
   app.get('/v1/rewards-info', async (req: any, res: any) => {
     try {
+      // console.log('/rewards-info getting estimatedTimeMsTilCheckpoint lockedRewards')
       const [estimatedTimeMsTilCheckpoint, lockedRewards] = await Promise.all([
         controller.getRemainingTimeTilCheckpoint(),
         controller.getLockedRewards()
       ])
+
+      // console.log('/rewards-info done getting estimatedTimeMsTilCheckpoint lockedRewards')
 
       const oneDay = 24 * 60 * 60 * 1000
       let estimatedDateMs = Date.now() + estimatedTimeMsTilCheckpoint
@@ -68,6 +71,8 @@ export async function startServer () {
       const remaining = end.diff(now)
       const countdownFormatted = remaining.toFormat("d'd' h'h' m'm' ss")
       const countdownRelative = end.toRelative()
+
+      // console.log('/rewards-info returning response')
 
       const data = {
         estimatedTimeMsTilCheckpoint,
