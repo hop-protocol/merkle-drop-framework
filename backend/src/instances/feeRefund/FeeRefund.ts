@@ -49,7 +49,9 @@ export class OptimismFeeRefund {
     }
 
     console.timeEnd('calculateFees ' + id)
-    console.log('getData done:', JSON.stringify(result))
+    if (options?.logResult) {
+      console.log('getData done:', JSON.stringify(result))
+    }
     return { data: result }
   }
 

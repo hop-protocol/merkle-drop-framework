@@ -16,6 +16,9 @@ import { config } from './config'
 import { Notifier } from './Notifier'
 import { chainSlugToId } from './utils'
 
+const cachePromises : any = {}
+const cacheTimestamps : any = {}
+
 export class Controller {
   network: string
   rewardsContractAddress: string
@@ -172,7 +175,7 @@ export class Controller {
     }
 
     try {
-      console.log('rewardsDataOutputGitUrl:', config.rewardsDataOutputGitUrl)
+      // console.log('rewardsDataOutputGitUrl:', config.rewardsDataOutputGitUrl)
       const gitConfig = await git.listConfig('local')
       if (gitConfig?.values?.['.git/config']?.['remote.origin.url'] !== config.rewardsDataOutputGitUrl) {
         await git.addRemote('origin', config.rewardsDataOutputGitUrl)
@@ -205,7 +208,7 @@ export class Controller {
     }
 
     try {
-      console.log('rewardsDataOutputGitUrl:', config.rewardsDataOutputGitUrl)
+      // console.log('rewardsDataOutputGitUrl:', config.rewardsDataOutputGitUrl)
       const gitConfig = await git.getConfig('local')
       if (gitConfig?.values?.['.git/config']?.['remote.origin.url'] !== config.rewardsDataOutputGitUrl) {
         await git.addRemote('origin', config.rewardsDataOutputGitUrl)
@@ -662,15 +665,43 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
     return response
   }
 
+  cachePromise (key: string, promiseFn: any, cacheTimeMs: number) {
+    if (cachePromises[key] && cacheTimestamps[key]) {
+      const isRecent = cacheTimestamps[key] > Date.now() - cacheTimeMs
+      if (isRecent) {
+        return cachePromises[key]
+      }
+    }
+    const promise = promiseFn().catch((err: any) => {
+      cachePromises[key] = null
+      cacheTimestamps[key] = null
+      throw err
+    })
+    cachePromises[key] = promise
+    cacheTimestamps[key] = Date.now()
+    return promise
+  }
+
   async getLastRepoCheckpointMs (): Promise<number> {
+    const key = 'getLastRepoCheckpointMs'
+    const cacheTimeMs = 30 * 1000
+
+    return this.cachePromise(key, this._getLastRepoCheckpointMs.bind(this), cacheTimeMs)
+  }
+
+  async _getLastRepoCheckpointMs (): Promise<number> {
+    const _id = `getLastRepoCheckpointMs ${Date.now()}`
+    console.time(_id)
     console.log('getLastRepoCheckpointMs')
 
     const cached = this.lastCheckpointMs && this.lastCheckpointMsCheckExpiresAt && this.lastCheckpointMsCheckExpiresAt > Date.now()
     if (cached) {
+      console.timeEnd(_id)
       return this.lastCheckpointMs
     }
 
     if (!config.rewardsDataOutputGitUrl) {
+      console.timeEnd(_id)
       throw new Error('rewardsDataOutputGitUrl required')
     }
 
@@ -680,6 +711,7 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
     }
 
     if (!config.outputRepoPath) {
+      console.timeEnd(_id)
       throw new Error('OUTPUT_REPO_PATH is required')
     }
 
@@ -687,13 +719,19 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
 
     try {
       if (!fs.existsSync(path.resolve(config.outputRepoPath, '.git'))) {
+        const _key = `clone ${_id}`
+        console.time(_key)
         await git.clone(config.rewardsDataOutputGitUrl, config.outputRepoPath)
+        console.timeEnd(_key)
       }
     } catch (err) {
     }
 
     try {
+      const _key = `cwd ${_id}`
+      console.time(_key)
       await git.cwd(config.outputRepoPath)
+      console.timeEnd(_key)
     } catch (err) {
       console.log('clone error', err)
     }
@@ -701,7 +739,10 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
     try {
       const shouldPull = !this.lastPull.rewardsDataOutputGitUrl || (this.lastPull.rewardsDataOutputGitUrl + (10 * 1000)) < Date.now()
       if (shouldPull) {
+        const _key = `pull ${_id}`
+        console.time(_key)
         await git.pull('origin', 'master')
+        console.timeEnd(_key)
         this.lastPull.rewardsDataOutputGitUrl = Date.now()
       }
     } catch (err) {
@@ -712,7 +753,10 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
       const gitConfig = await git.listConfig('local')
       console.log('rewardsDataOutputGitUrl:', config.rewardsDataOutputGitUrl)
       if (gitConfig?.values?.['.git/config']?.['remote.origin.url'] !== config.rewardsDataOutputGitUrl) {
+        const _key = `addRemote ${_id}`
+        console.time(_key)
         await git.addRemote('origin', config.rewardsDataOutputGitUrl)
+        console.timeEnd(_key)
       }
     } catch (err) {
       // console.log('remote error', err)
@@ -720,9 +764,12 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
 
     let lastCheckpointMs = 0
     try {
+      const _key = `gitlog ${_id}`
+      console.time(_key)
       const logs = await git.log()
+      console.timeEnd(_key)
       const latestLog = logs?.latest
-      console.log(latestLog)
+      // console.log(latestLog)
       if (latestLog) {
         const date = DateTime.fromISO(latestLog.date)
         const millis = date.toMillis()
@@ -736,6 +783,7 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
 
     this.lastCheckpointMs = lastCheckpointMs
     this.lastCheckpointMsCheckExpiresAt = Date.now() + (5 * 1000)
+    console.timeEnd(_id)
     return lastCheckpointMs
   }
 

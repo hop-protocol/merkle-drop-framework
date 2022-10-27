@@ -114,7 +114,8 @@ async function main (options: any) {
           shouldWrite: true,
           writePath,
           startTimestamp,
-          endTimestamp
+          endTimestamp,
+          logResult: true
         })
         console.log('generated', { rootHash, totalFormatted, startTimestamp, endTimestamp })
 
