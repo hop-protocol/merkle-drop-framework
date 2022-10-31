@@ -39,6 +39,8 @@ async function main (options: any = {}) {
 
   const { tree, total, onchainPreviousTotalAmount, calldata } = await controller.generateRoot({shouldWrite: false, startTimestamp, endTimestamp})
   const rootHash = tree.getHexRoot()
+  console.log('startTimestamp:', startTimestamp)
+  console.log('endTimestamp:', endTimestamp)
   console.log('root:', rootHash)
   console.log('total:', `${total.toString()} (${formatUnits(total.toString(), 18)})`)
   console.log('onchainPreviousTotalAmount:', `${onchainPreviousTotalAmount.toString()} (${formatUnits(onchainPreviousTotalAmount.toString(), 18)})`)
