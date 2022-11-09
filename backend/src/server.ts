@@ -44,7 +44,7 @@ export async function startServer () {
       if (!/Invalid Entry/gi.test(err?.message)) {
         console.error('/rewards request error:', err)
       }
-      res.status(400).json({ error: err.message })
+      res.status(200).json({ error: err.message })
     }
   })
 
@@ -97,7 +97,7 @@ export async function startServer () {
       res.json({ data })
     } catch (err) {
       console.error('/rewards-info request error:', err)
-      res.status(400).json({ error: err.message })
+      res.status(200).json({ error: err.message })
     }
   })
 
