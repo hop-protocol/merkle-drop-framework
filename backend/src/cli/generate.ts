@@ -37,14 +37,16 @@ async function main (options: any = {}) {
   console.log('startTimestamp:', startTimestamp)
   console.log('endTimestamp:', endTimestamp)
 
-  const { tree, total, onchainPreviousTotalAmount, calldata } = await controller.generateRoot({shouldWrite: false, startTimestamp, endTimestamp})
+  const { tree, total, onchainPreviousTotalAmount, calldata } = await controller.generateRoot({shouldWrite: false, startTimestamp, endTimestamp, logResult: false })
   const rootHash = tree.getHexRoot()
+  console.log('----------------')
   console.log('startTimestamp:', startTimestamp)
   console.log('endTimestamp:', endTimestamp)
   console.log('root:', rootHash)
   console.log('total:', `${total.toString()} (${formatUnits(total.toString(), 18)})`)
   console.log('onchainPreviousTotalAmount:', `${onchainPreviousTotalAmount.toString()} (${formatUnits(onchainPreviousTotalAmount.toString(), 18)})`)
   console.log('calldata:', JSON.stringify(calldata))
+  console.log('----------------')
   console.log('done')
 
   if (options.logTokenPrices) {
