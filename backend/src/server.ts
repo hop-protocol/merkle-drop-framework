@@ -58,13 +58,13 @@ export async function startServer () {
 
       // console.log('/rewards-info done getting estimatedTimeMsTilCheckpoint lockedRewards')
 
-      const oneDay = 24 * 60 * 60 * 1000
+      const extraTimeMs = 7 * 24 * 60 * 60 * 1000 // 1 week
       let estimatedDateMs = Date.now() + estimatedTimeMsTilCheckpoint
       const estimatedDateRelative = DateTime.fromMillis(estimatedDateMs).toRelative()
-      const estimatedCheckpointEndTimestampMs = estimatedDateMs - oneDay
+      const estimatedCheckpointEndTimestampMs = estimatedDateMs - extraTimeMs
       const estimatedCheckpointEndTimestampRelative = DateTime.fromMillis(estimatedCheckpointEndTimestampMs).toRelative()
 
-      estimatedDateMs = estimatedDateMs + oneDay // one day extra time in order for multisig signers to publish root on chain
+      estimatedDateMs = estimatedDateMs + extraTimeMs // add extra time in order for multisig signers to publish root on chain
 
       const end = DateTime.fromMillis(estimatedDateMs)
       const now = DateTime.now()
