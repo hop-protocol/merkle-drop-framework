@@ -13,6 +13,7 @@ program
   .option('--rewards-contract <address>', 'Rewards contract address')
   .option('--rewards-contract-network <network>', 'Rewards contract network')
   .option('--log-token-prices [boolean]', 'Log token prices')
+  .option('--log-address-data [boolean]', 'Log addresses data')
   .action(async (source: any) => {
     try {
       await main(source)
@@ -37,7 +38,7 @@ async function main (options: any = {}) {
   console.log('startTimestamp:', startTimestamp)
   console.log('endTimestamp:', endTimestamp)
 
-  const { tree, total, onchainPreviousTotalAmount, calldata } = await controller.generateRoot({shouldWrite: false, startTimestamp, endTimestamp, logResult: false })
+  const { tree, total, onchainPreviousTotalAmount, calldata } = await controller.generateRoot({shouldWrite: false, startTimestamp, endTimestamp, logResult: !!options.logAddressData })
   const rootHash = tree.getHexRoot()
   console.log('----------------')
   console.log('startTimestamp:', startTimestamp)

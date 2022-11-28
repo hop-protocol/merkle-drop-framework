@@ -54,6 +54,34 @@ export class OptimismFeeRefund {
       result['0xef4d3dd425c985bf4756be8e69733ef8988f8675'] = '4228027636380216059'
     }
 
+    if (result['0x60c56ef505b8c9d7ac1c7f180a9006a5ea3c3875'] === '6006131131769983589') {
+      result['0x60c56ef505b8c9d7ac1c7f180a9006a5ea3c3875'] = '6016026839437235874'
+    }
+
+    if (result['0x61c708d28928a18a84851f815fdbbff8e137ca98'] === '1120106079591103143') {
+      result['0x61c708d28928a18a84851f815fdbbff8e137ca98'] = '1120106080287928296'
+    }
+
+    if (result['0x737132193582198728515329dcb551088767b8de'] === '345149428958359206') {
+      result['0x737132193582198728515329dcb551088767b8de'] = '345445232718322726'
+    }
+
+    if (result['0xaa71d845e6da88069f69e56be7421a77e2fa87b2'] === '318615009557284112') {
+      result['0xaa71d845e6da88069f69e56be7421a77e2fa87b2'] = '318615009562104146'
+    }
+
+    if (result['0xd3c85eb21abc986053300851456c457b0fb88b15'] === '937608690285083757') {
+      result['0xd3c85eb21abc986053300851456c457b0fb88b15'] = '939965804282735129'
+    }
+
+    if (result['0xe17b279d3891b48c36ef616a5f70a586e80b5b98'] === '301301788842941509') {
+      result['0xe17b279d3891b48c36ef616a5f70a586e80b5b98'] = '302221944542915011'
+    }
+
+    if (result['0xfc2d9450ee35fc00ccc290e785d9e24bbacf7d86'] === '700087569526555154') {
+      result['0xfc2d9450ee35fc00ccc290e785d9e24bbacf7d86'] = '701867448211757339'
+    }
+
     console.timeEnd('calculateFees ' + id)
     if (options?.logResult) {
       console.log('getData done:', JSON.stringify(result))
