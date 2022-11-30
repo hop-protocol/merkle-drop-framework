@@ -270,8 +270,10 @@ export class Controller {
 
     const { data } = await this.getData(options)
 
+    const totalAccounts = new Set([])
     let sum = BigNumber.from(0)
     for (const addr in data) {
+      totalAccounts.add(addr)
       sum = sum.add(BigNumber.from(data[addr]))
     }
 
@@ -317,7 +319,7 @@ export class Controller {
 
     const totalFormatted = formatUnits(total.toString(), 18)
 
-    return { rootHash, tree, total, totalFormatted, onchainPreviousTotalAmount, calldata }
+    return { rootHash, tree, total, totalFormatted, onchainPreviousTotalAmount, calldata, totalAccounts: totalAccounts.size }
   }
 
   async getToken (): Promise<Contract> {
