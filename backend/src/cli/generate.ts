@@ -52,9 +52,9 @@ async function main (options: any = {}) {
   console.log('done')
 
   if (options.logTokenPrices) {
-    const tokens = ['OP', 'ETH', 'USDC', 'USDT', 'DAI']
+    const tokens = ['OP', 'ETH', 'USDC', 'USDT', 'DAI', 'SNX']
     for (const token of tokens) {
-      for (let i = 1; i < 14; i++) {
+      for (let i = 1; i < 60; i++) {
         const dt = DateTime.now().toUTC().startOf('day').minus({ days: i })
         const timestamp = Math.floor(dt.toSeconds())
         const tokenPrice = await feeRefund.getTokenPrice(token, timestamp, startTimestamp)
