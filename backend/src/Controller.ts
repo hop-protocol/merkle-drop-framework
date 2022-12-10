@@ -640,6 +640,7 @@ Rewards contract network: ${this.rewardsContractNetwork}
 Instructions to verify merkle root:
 
 \`\`\`
+docker pull hopprotocol/merkle-drop-framework
 docker run --env-file docker.env -v /tmp/feesdb:/tmp/feesdb hopprotocol/merkle-drop-framework start:dist generate -- --network=${this.network} --rewards-contract=${this.rewardsContractAddress} --rewards-contract-network=${this.rewardsContractNetwork} --start-timestamp=${startTimestamp} --end-timestamp=${endTimestamp}
 \`\`\`
 
