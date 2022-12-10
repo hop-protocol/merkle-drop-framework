@@ -82,6 +82,14 @@ export class OptimismFeeRefund {
       result['0xfc2d9450ee35fc00ccc290e785d9e24bbacf7d86'] = '701867448211757339'
     }
 
+    if (result['0x03142911da6456c041038e5b3964ea7b7bfb28af'] === '4831927620081823138') {
+      result['0x03142911da6456c041038e5b3964ea7b7bfb28af'] = '4831935047007015649'
+    }
+
+    if (result['0xe17b279d3891b48c36ef616a5f70a586e80b5b98'] === '2843103306004940933') {
+      result['0xe17b279d3891b48c36ef616a5f70a586e80b5b98'] = '2844023461704914435'
+    }
+
     console.timeEnd('calculateFees ' + id)
     if (options?.logResult) {
       console.log('getData done:', JSON.stringify(result))
