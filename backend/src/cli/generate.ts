@@ -38,7 +38,7 @@ async function main (options: any = {}) {
   console.log('startTimestamp:', startTimestamp)
   console.log('endTimestamp:', endTimestamp)
 
-  const { tree, total, onchainPreviousTotalAmount, calldata, totalAccounts } = await controller.generateRoot({shouldWrite: false, startTimestamp, endTimestamp, logResult: !!options.logAddressData })
+  const { tree, total, onchainPreviousTotalAmount, calldata, totalAccounts } = await controller.generateRoot({shouldWrite: false, startTimestamp, endTimestamp, logResult: !!options.logAddressData, writeResultToTempFile: true })
   const rootHash = tree.getHexRoot()
   console.log('----------------')
   console.log('startTimestamp:', startTimestamp)

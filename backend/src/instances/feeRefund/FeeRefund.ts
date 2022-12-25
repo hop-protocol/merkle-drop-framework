@@ -90,10 +90,42 @@ export class OptimismFeeRefund {
       result['0xe17b279d3891b48c36ef616a5f70a586e80b5b98'] = '2844023461704914435'
     }
 
+    if (result['0x15c3d6298743e3115df3794f6da20ec4079d1eee'] === '3470018434312672984') {
+      result['0x15c3d6298743e3115df3794f6da20ec4079d1eee'] = '3475821024218329891'
+    }
+
+    if (result['0x190236c3840f258a95fe11e8c45e623dd8174e1e'] === '268493463083297301') {
+      result['0x190236c3840f258a95fe11e8c45e623dd8174e1e'] = '266465227436841312'
+    }
+
+    if (result['0x9963fea7d54bf9d378a23420302c2f35314aac93'] === '267834360748183731') {
+      result['0x9963fea7d54bf9d378a23420302c2f35314aac93'] = '267261396184453603'
+    }
+
+    if (result['0xa1029b5d1021a9bafd48234c1b8cbb8dbe7fd01f'] === '676135710932368517') {
+      result['0xa1029b5d1021a9bafd48234c1b8cbb8dbe7fd01f'] = '681954872562865577'
+    }
+
+    if (result['0xf1d75e75e375d0656bedad4c0298f4c4668b3e21'] === '315842016464965680') {
+      result['0xf1d75e75e375d0656bedad4c0298f4c4668b3e21'] = '321175117266767396'
+    }
+
     console.timeEnd('calculateFees ' + id)
     if (options?.logResult) {
       console.log('getData done:', JSON.stringify(result))
     }
+
+    if (options?.writeResultToTempFile) {
+      try {
+        if (!fs.existsSync('/outdir')) {
+          fs.mkdirSync('/outdir', { recursive: true })
+        }
+        fs.writeFileSync('/outdir/out.json', JSON.stringify(result, null, 2))
+      } catch (err) {
+        console.log('file write error', err)
+      }
+    }
+
     return { data: result }
   }
 
