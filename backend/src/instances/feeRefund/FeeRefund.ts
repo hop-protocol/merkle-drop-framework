@@ -44,7 +44,6 @@ export class OptimismFeeRefund {
     console.time('calculateFees ' + id)
     let result = await feeRefund.calculateFees(endTimestamp)
 
-    // handle slight price difference discrepancy for account on github published root
     result = offsetFixes(result)
 
     console.timeEnd('calculateFees ' + id)

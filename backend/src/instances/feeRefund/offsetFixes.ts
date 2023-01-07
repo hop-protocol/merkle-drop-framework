@@ -1,3 +1,6 @@
+// handle slight price difference discrepancy for account (off by a few cents) on github published root
+// TODO: figure out why this happens sometimes in fee refund package (maybe there's a price feed fetch error so it uses outdated prices?)
+
 export function offsetFixes (result: Record<string, string>) {
   // https://github.com/hop-protocol/optimism-refund-merkle-rewards/tree/master/0x679480522fad173e50f5604f7ee114b6ea38c9ae687fdab6d5837ba7f7d6f3ac
 
@@ -75,6 +78,24 @@ export function offsetFixes (result: Record<string, string>) {
 
   if (result['0xf1d75e75e375d0656bedad4c0298f4c4668b3e21'] === '315842016464965680') {
     result['0xf1d75e75e375d0656bedad4c0298f4c4668b3e21'] = '321175117266767396'
+  }
+
+  // https://github.com/hop-protocol/optimism-refund-merkle-rewards/tree/master/0x43bb366e6b61ae8f5fb702c8ab29c938349eea9961a86570720b66089909eaaa
+
+  if (result['0x15c3d6298743e3115df3794f6da20ec4079d1eee'] === '3924330225410361806') {
+    result['0x15c3d6298743e3115df3794f6da20ec4079d1eee'] = '3930132815316018713'
+  }
+
+  if (result['0x60c56ef505b8c9d7ac1c7f180a9006a5ea3c3875'] === '6427328448541149375') {
+    result['0x60c56ef505b8c9d7ac1c7f180a9006a5ea3c3875'] = '6437224156208401660'
+  }
+
+  if (result['0xd3c85eb21abc986053300851456c457b0fb88b15'] === '1244416409311115413') {
+    result['0xd3c85eb21abc986053300851456c457b0fb88b15'] = '1246773523308766785'
+  }
+
+  if (result['0xe17b279d3891b48c36ef616a5f70a586e80b5b98'] === '3251625753151451026') {
+    result['0xe17b279d3891b48c36ef616a5f70a586e80b5b98'] = '3252545908851424528'
   }
 
   return result

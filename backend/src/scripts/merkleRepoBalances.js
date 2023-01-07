@@ -2,6 +2,9 @@ const fs = require('fs')
 const { BigNumber } = require('ethers')
 const { formatUnits } = require('ethers/lib/utils')
 
+// cd /tmp
+// git clone git@github.com:hop-protocol/optimism-refund-merkle-rewards.git
+// for cli output run with run with docker flag `-v /tmp/outdir:/outdir` and cli json output will be in /output/out.json
 const repoPath = '/tmp/optimism-refund-merkle-rewards'
 const { root } = require(repoPath + '/latest.json')
 const all = {}
