@@ -1,4 +1,4 @@
-import { FeeRefund } from '@hop-protocol/fee-refund'
+import { FeeRefund, SeedOptions } from '@hop-protocol/fee-refund'
 import fs from 'fs'
 import path from 'path'
 import { offsetFixes } from './offsetFixes'
@@ -12,6 +12,7 @@ export class OptimismFeeRefund {
   constructor (controller: any) {
     this.controller = controller
     this.controller.setGetDataFromPackage(this.getDataFromPackage.bind(this))
+    this.controller.setGetHistoryForAccount(this.getHistoryForAccount.bind(this))
   }
 
   async getDataFromPackage (options: any): Promise<any> {
@@ -35,10 +36,15 @@ export class OptimismFeeRefund {
     const feeRefund = new FeeRefund(_config)
 
     const id = Date.now()
+    const seedOptions: SeedOptions = {}
+    const hopTransfersStartTime = Number(process.env.HOP_TRANSERS_SYNC_START_TIME)
+    if (hopTransfersStartTime) {
+      seedOptions.hopTransfersStartTime = hopTransfersStartTime
+    }
 
     console.log('seeding')
     console.time('seeding ' + id)
-    await feeRefund.seed()
+    await feeRefund.seed(seedOptions)
     console.timeEnd('seeding ' + id)
     console.log('calculating fees')
     console.time('calculateFees ' + id)
@@ -157,5 +163,18 @@ export class OptimismFeeRefund {
     const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount }
     const feeRefund = new FeeRefund(_config)
     return feeRefund.getTokenPrice(tokenSymbol, timestamp)
+  }
+
+  async getHistoryForAccount (account: string) {
+    const dbDir = path.resolve(feesDbPath, 'db')
+    const merkleRewardsContractAddress = this.controller.rewardsContractAddress
+    const refundTokenSymbol = await this.controller.getTokenSymbol()
+    const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
+    const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
+    const startTimestamp = this.controller.startTimestamp
+    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount }
+    const feeRefund = new FeeRefund(_config)
+    const transfers = await feeRefund.getAccountHistory(account)
+    return transfers?.sort((a: any, b: any) => b?.timestamp - a?.timestamp)
   }
 }

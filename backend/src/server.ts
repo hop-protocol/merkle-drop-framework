@@ -28,16 +28,25 @@ export async function startServer () {
 
   app.get('/v1/rewards', responseCache, async (req: any, res: any) => {
     try {
-      let { address } = req.query
+      let { address, history: shouldGetHistory } = req.query
       if (!address) {
         throw new Error('address is requred')
       }
       address = getAddress(address)
       // console.log('address:', address)
       const rewards = await controller.getRewardsForAccount(address)
+      let history : any
+      try {
+        if (shouldGetHistory) {
+          history = await controller.getHistoryForAccount(address)
+        }
+      } catch (err: any) {
+        console.error('getHistoryForAccount error:', err)
+      }
       const data = {
         address,
-        rewards
+        rewards,
+        history
       }
       res.status(200).json({ status: 'ok', data })
     } catch (err) {

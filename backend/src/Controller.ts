@@ -464,6 +464,10 @@ export class Controller {
     }
   }
 
+  async getHistoryForAccount (account: string) {
+    return []
+  }
+
   async getClaimableForAccount (account: string) {
     if (!config.outputMerklePath) {
       throw new Error('OUTPUT_REPO_PATH is required')
@@ -533,6 +537,10 @@ export class Controller {
 
   setGetDataFromPackage (fn: any) {
     this.getDataFromPackage = fn
+  }
+
+  setGetHistoryForAccount (fn: any) {
+    this.getHistoryForAccount = fn
   }
 
   async getDataFromRepo (options: any) {
