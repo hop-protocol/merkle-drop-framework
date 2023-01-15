@@ -24,8 +24,8 @@ export const config = {
   rewardsDataGitUrl: process.env.REWARDS_DATA_GIT_URL,
   rewardsDataOutputGitUrl: process.env.REWARDS_DATA_OUTPUT_GIT_URL,
   dataRepoPath: process.env.DATA_REPO_PATH,
-  outputRepoPath: process.env.OUTPUT_REPO_PATH,
-  outputMerklePath: process.env.OUTPUT_MERKLE_PATH,
+  outputRepoPath: process.env.OUTPUT_REPO_PATH, // this is repo that has published github data
+  outputMerklePath: process.env.OUTPUT_MERKLE_PATH, // this is folder with latest merkle data generated from each poll
   checkpointIntervalMs: 0,
   startTimestamp: 0,
   merkleBaseUrl: process.env.MERKLE_BASE_URL

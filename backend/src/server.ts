@@ -60,9 +60,10 @@ export async function startServer () {
   app.get('/v1/rewards-info', async (req: any, res: any) => {
     try {
       // console.log('/rewards-info getting estimatedTimeMsTilCheckpoint lockedRewards')
-      const [estimatedTimeMsTilCheckpoint, lockedRewards] = await Promise.all([
+      const [estimatedTimeMsTilCheckpoint, lockedRewards, repoRootInfo] = await Promise.all([
         controller.getRemainingTimeTilCheckpoint(),
-        controller.getLockedRewards()
+        controller.getLockedRewards(),
+        controller.getRepoRootInfo()
       ])
 
       // console.log('/rewards-info done getting estimatedTimeMsTilCheckpoint lockedRewards')
@@ -100,7 +101,9 @@ export async function startServer () {
         estimatedCheckpointEndTimestampRelative,
         onchainRoot: lockedRewards.onchainRoot,
         onchainRootTotalAmount: lockedRewards.onchainRootTotalAmount.toString(),
-        onchainRootTotalAmountFormatted: lockedRewards.onchainRootTotalAmountFormatted
+        onchainRootTotalAmountFormatted: lockedRewards.onchainRootTotalAmountFormatted,
+        repoLatestRoot: repoRootInfo.repoLatestRoot,
+        repoLatestRootTotal: repoRootInfo.repoLatestRootTotal.toString()
       }
 
       res.json({ data })

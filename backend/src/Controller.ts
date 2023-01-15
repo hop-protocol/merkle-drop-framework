@@ -403,7 +403,7 @@ export class Controller {
     }
 
     if (!config.outputMerklePath) {
-      throw new Error('OUTPUT_REPO_PATH is required')
+      throw new Error('OUTPUT_MERKLE_PATH is required')
     }
 
     if (!config.outputRepoPath) {
@@ -432,6 +432,7 @@ export class Controller {
 
     account = account.toLowerCase()
     let amount = BigNumber.from(0)
+    let proofBalance = BigNumber.from(0)
     if (isRootSet) {
       try {
         const onchainShardedMerkleTree = this.shardedMerkleTreeCache[onchainRoot] ?? await ShardedMerkleTree.fetchTree(config.merkleBaseUrl, onchainRoot)
@@ -448,19 +449,36 @@ export class Controller {
           this.shardedMerkleTreeProofCache[onchainRoot][account] = proofData
         }
 
-        const total = BigNumber.from(onchainEntry.balance)
+        proofBalance = BigNumber.from(onchainEntry.balance)
         const withdrawn = await this.getWithdrawn(account)
-        amount = total.sub(withdrawn)
+        amount = proofBalance.sub(withdrawn)
       } catch (err) {
         // console.error('tree error (possibly no entry for account as expected):', err)
       }
+    }
+
+    let claimableProofBalance = BigNumber.from(0)
+    let claimableProof : any[] = []
+    try {
+      const root = await this.getOnchainRoot()
+      const merkleDataPath = path.resolve(config.outputMerklePath, root)
+      const shardedMerkleTree = ShardedMerkleTree.fromFiles(merkleDataPath)
+      const [_entry, _proof] = await shardedMerkleTree.getProof(account.toLowerCase())
+      if (_entry && _proof) {
+        claimableProofBalance = BigNumber.from(_entry.balance)
+        claimableProof = _proof
+      }
+    } catch (err: any) {
     }
 
     return {
       account,
       lockedBalance: lockedBalance.toString(),
       balance: amount.toString(),
-      proof
+      proofBalance: proofBalance.toString(),
+      proof,
+      claimableProofBalance: claimableProofBalance.toString(),
+      claimableProof
     }
   }
 
@@ -598,7 +616,7 @@ export class Controller {
   async copyRootDataToOutputRepo (rootHash: string) {
     const outputMerklePath = process.env.OUTPUT_MERKLE_PATH
     if (!outputMerklePath) {
-      throw new Error('OUTPUT_REPO_PATH is required')
+      throw new Error('OUTPUT_MERKLE_PATH is required')
     }
 
     if (!config.outputRepoPath) {
@@ -902,6 +920,35 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
     }
   }
 
+  async getRepoRootInfo () {
+    try {
+      if (!config.outputRepoPath) {
+        throw new Error('OUTPUT_REPO_PATH is required')
+      }
+
+      const outDirectory = path.resolve(config.outputRepoPath)
+      const { root } = JSON.parse(fs.readFileSync(path.resolve(outDirectory, 'latest.json'), 'utf8'))
+      const { total } = JSON.parse(fs.readFileSync(path.resolve(outDirectory, root, 'root.json'), 'utf8'))
+      if (!root) {
+        throw new Error('expected root')
+      }
+      if (!total) {
+        throw new Error('expected total')
+      }
+
+      return {
+        repoLatestRoot: root,
+        repoLatestRootTotal: total
+      }
+    } catch (err: any) {
+      console.error('getRepoRootInfo error:', err)
+      return {
+        repoLatestRoot: '0x',
+        repoLatestRootTotal: BigNumber.from(0)
+      }
+    }
+  }
+
   async getLockedRewards () {
     if (!config.outputMerklePath) {
       throw new Error('OUTPUT_MERKLE_PATH is required')
@@ -915,6 +962,7 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
       const onchainRoot = await this.getOnchainRoot()
       const totalAmount = BigNumber.from(total.toString())
       const additionalAmount = totalAmount.sub(onchainPreviousTotalAmount)
+
       return {
         root,
         totalAmount,
