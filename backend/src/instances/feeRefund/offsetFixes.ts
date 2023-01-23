@@ -1,5 +1,6 @@
-// handle slight price difference discrepancy for account (off by a few cents) on github published root
-// TODO: figure out why this happens sometimes in fee refund package (maybe there's a price feed fetch error so it uses outdated prices?)
+// this is to handle slight price difference discrepancy for account (off by a few cents) on github published root.
+// This issue was orginally caused by not rounding fractions of token prices to 2 decimals in fee refund package,
+// because coingecko api would return slightly different prices when querying at a later time causing undeterministic prices.
 
 export function offsetFixes (result: Record<string, string>) {
   // https://github.com/hop-protocol/optimism-refund-merkle-rewards/tree/master/0x679480522fad173e50f5604f7ee114b6ea38c9ae687fdab6d5837ba7f7d6f3ac

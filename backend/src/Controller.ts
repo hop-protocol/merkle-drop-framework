@@ -461,7 +461,7 @@ export class Controller {
     let claimableProof : any[] = []
     try {
       const root = await this.getOnchainRoot()
-      const merkleDataPath = path.resolve(config.outputMerklePath, root)
+      const merkleDataPath = path.resolve(config.outputRepoPath, root)
       const shardedMerkleTree = ShardedMerkleTree.fromFiles(merkleDataPath)
       const [_entry, _proof] = await shardedMerkleTree.getProof(account.toLowerCase())
       if (_entry && _proof) {
