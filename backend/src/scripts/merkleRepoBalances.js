@@ -26,4 +26,7 @@ for (const addr in all) {
 console.log(JSON.stringify(all, null, 2))
 console.log(sum.toString(), formatUnits(sum, 18))
 
+// mv /tmp/outdir/out.json /tmp/cli.json
 // diff_files /tmp/cli.json /tmp/repo.json
+// note: file json might need to be sorted before diff;
+// jq --sort-keys
