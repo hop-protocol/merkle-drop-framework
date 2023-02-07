@@ -15,6 +15,7 @@ export async function startServer () {
   app.use(express.json({ limit: '500kb' }))
   app.use(express.urlencoded({ extended: false, limit: '500kb', parameterLimit: 50 }))
   app.use(ipRateLimitMiddleware)
+  app.options('*', cors())
 
   app.use('/static', express.static('static'))
 

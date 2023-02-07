@@ -516,7 +516,7 @@ export class Controller {
     const withdrawn = await this.contract.withdrawn(account)
 
     this.withdrawnCache[account] = withdrawn
-    this.withdrawnCacheCheckExpiresAt[account] = Date.now() + (5 * 1000)
+    this.withdrawnCacheCheckExpiresAt[account] = Date.now() + (60 * 1000)
 
     return withdrawn
   }
