@@ -513,7 +513,19 @@ export class Controller {
       return this.withdrawnCache[account]
     }
 
-    const withdrawn = await this.contract.withdrawn(account)
+    let withdrawn : BigNumber
+    // TODO: generalize
+    const publicOptimismRpc = process.env.PUBLIC_OPTIMISM_RPC_URL
+    if (publicOptimismRpc) {
+      try {
+        const provider = new providers.StaticJsonRpcProvider(publicOptimismRpc)
+        withdrawn = await this.contract.connect(provider).withdrawn(account)
+      } catch (err: any) {
+        withdrawn = await this.contract.withdrawn(account)
+      }
+    } else {
+      withdrawn = await this.contract.withdrawn(account)
+    }
 
     this.withdrawnCache[account] = withdrawn
     this.withdrawnCacheCheckExpiresAt[account] = Date.now() + (60 * 1000)
