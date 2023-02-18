@@ -105,5 +105,11 @@ export function offsetFixes (result: Record<string, string>) {
     result['0xaa71d845e6da88069f69e56be7421a77e2fa87b2'] = '498615009562104146'
   }
 
+  // https://github.com/hop-protocol/optimism-refund-merkle-rewards/tree/master/0x12b40cfa56bb740a466b2e80363c8d8f61c6651b6f2b56f9ae28535287af2f36
+
+  if (result['0x9963fea7d54bf9d378a23420302c2f35314aac93'] === '507834360748183731') {
+    result['0x9963fea7d54bf9d378a23420302c2f35314aac93'] = '507261396184453603'
+  }
+
   return result
 }

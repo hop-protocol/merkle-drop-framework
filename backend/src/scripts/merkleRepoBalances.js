@@ -24,9 +24,9 @@ for (const addr in all) {
 }
 
 console.log(JSON.stringify(all, null, 2))
-console.log(sum.toString(), formatUnits(sum, 18))
+// console.log(sum.toString(), formatUnits(sum, 18))
 
-// mv /tmp/outdir/out.json /tmp/cli.json
+// after cloning the repo and running the above commands, run:
+// cat /tmp/outdir/out.json | jq --sort-keys > /tmp/cli.json
+// node src/scripts/merkleRepoBalances.js | jq --sort-keys > /tmp/repo.json
 // diff_files /tmp/cli.json /tmp/repo.json
-// note: file json might need to be sorted before diff;
-// jq --sort-keys
