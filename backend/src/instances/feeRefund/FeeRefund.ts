@@ -2,6 +2,8 @@ import { FeeRefund, SeedOptions } from '@hop-protocol/fee-refund'
 import fs from 'fs'
 import path from 'path'
 import { offsetFixes } from './offsetFixes'
+import { DateTime } from 'luxon'
+import { promiseTimeout } from '../../utils/promiseTimeout'
 
 const feesDbPath = process.env.FEES_DB_PATH || '/tmp/feesdb'
 
@@ -44,7 +46,7 @@ export class OptimismFeeRefund {
 
     console.log('seeding')
     console.time('seeding ' + id)
-    await feeRefund.seed(seedOptions)
+    await promiseTimeout(feeRefund.seed(seedOptions), 60 * 60 * 1000)
     console.timeEnd('seeding ' + id)
     console.log('calculating fees')
     console.time('calculateFees ' + id)
@@ -175,6 +177,12 @@ export class OptimismFeeRefund {
     const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount }
     const feeRefund = new FeeRefund(_config)
     const transfers = await feeRefund.getAccountHistory(account)
-    return transfers?.sort((a: any, b: any) => b?.timestamp - a?.timestamp)
+    return transfers?.sort((a: any, b: any) => b?.timestamp - a?.timestamp).map((x: any) => {
+      if (x.timestamp) {
+        const time = DateTime.fromSeconds(x.timestamp)
+        x.timestampRelative = time.toRelative()
+      }
+      return { ...x }
+    })
   }
 }

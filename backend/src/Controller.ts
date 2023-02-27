@@ -14,7 +14,7 @@ import { forumPost } from './forumPost'
 import { DateTime } from 'luxon'
 import { config } from './config'
 import { Notifier } from './Notifier'
-import { chainSlugToId } from './utils'
+import { chainSlugToId } from './utils/chainSlugToId'
 
 const cachePromises : any = {}
 const cacheTimestamps : any = {}
