@@ -46,7 +46,7 @@ export class OptimismFeeRefund {
 
     console.log('seeding')
     console.time('seeding ' + id)
-    await promiseTimeout(feeRefund.seed(seedOptions), 60 * 60 * 1000)
+    await promiseTimeout(feeRefund.seed(seedOptions), 2 * 60 * 60 * 1000)
     console.timeEnd('seeding ' + id)
     console.log('calculating fees')
     console.time('calculateFees ' + id)
