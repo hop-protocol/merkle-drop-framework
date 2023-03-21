@@ -30,3 +30,6 @@ export const config = {
   startTimestamp: 0,
   merkleBaseUrl: process.env.MERKLE_BASE_URL
 }
+export enum InstanceType {
+  FeeRefund = 'fee-refund'
+}

@@ -2,6 +2,7 @@ import { program } from 'commander'
 import { Controller } from '../Controller'
 import { formatUnits } from 'ethers/lib/utils'
 import { DateTime } from 'luxon'
+import { InstanceType } from '../config'
 
 program
   .command('generate')
@@ -14,7 +15,7 @@ program
   .option('--rewards-contract-network <network>', 'Rewards contract network')
   .option('--log-token-prices [boolean]', 'Log token prices')
   .option('--log-address-data [boolean]', 'Log addresses data')
-  .option('--instance-type <string>', 'Instance type. Options are: fee-refund')
+  .option('--instance-type <string>', `Instance type. Options are: ${Object.values(InstanceType)}`)
   .action(async (source: any) => {
     try {
       await main(source)
@@ -27,11 +28,11 @@ async function main (options: any = {}) {
   console.log('options:', options)
   const startTimestamp = Number(options.startTimestamp) || Math.floor((Date.now()/1000) - 60 * 60)
   const endTimestamp = Number(options.endTimestamp) || Math.floor(Date.now()/1000)
-  const instanceType = options.instanceType || 'fee-refund'
+  const instanceType = options.instanceType || InstanceType.FeeRefund
 
   let instance : any
   let controller : any
-  if (instanceType === 'fee-refund') {
+  if (instanceType === InstanceType.FeeRefund) {
     const { FeeRefundInstance } = require('../instances/feeRefund/FeeRefund')
     controller = new Controller(options.network, options.rewardsContract, options.rewardsContractNetwork)
     instance = new FeeRefundInstance(controller)

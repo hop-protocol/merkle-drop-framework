@@ -3,7 +3,7 @@ import wait from 'wait'
 import { Level } from 'level'
 import { DateTime } from 'luxon'
 import { startServer } from '../server'
-import { config } from '../config'
+import { config, InstanceType } from '../config'
 
 const levelDbPath = process.env.LEVEL_DB_PATH
 let lastCheckpointMs = 0
@@ -18,6 +18,7 @@ program
   .option('--post-forum [boolean]', 'Set to true to post to forum')
   .option('--noCheckpoint [boolean]', 'Set to true to not push to github')
   .option('--server', 'Start server')
+  .option('--instance-type <string>', `Instance type. Options are: ${Object.values(InstanceType)}`)
   .action(async (source: any) => {
     try {
       await main(source)
@@ -29,6 +30,11 @@ program
 async function main (options: any) {
   console.log('options:', options)
   console.log('running worker')
+  const instanceType = options.instanceType || InstanceType.FeeRefund
+
+  if (instanceType !== InstanceType.FeeRefund) {
+    throw new Error('instance type not found')
+  }
 
   if (options.server) {
     console.log('starting server')
