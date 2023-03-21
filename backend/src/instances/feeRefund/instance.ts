@@ -1,4 +1,4 @@
 import { Controller } from '../../Controller'
-import { OptimismFeeRefund } from './FeeRefund'
+import { FeeRefundInstance } from './FeeRefund'
 export const controller = new Controller()
-export const feeRefund = new OptimismFeeRefund(controller)
+export const feeRefund = new FeeRefundInstance(controller)

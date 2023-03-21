@@ -14,6 +14,7 @@ program
   .option('--rewards-contract-network <network>', 'Rewards contract network')
   .option('--log-token-prices [boolean]', 'Log token prices')
   .option('--log-address-data [boolean]', 'Log addresses data')
+  .option('--instance-type <string>', 'Instance type. Options are: fee-refund')
   .action(async (source: any) => {
     try {
       await main(source)
@@ -26,11 +27,19 @@ async function main (options: any = {}) {
   console.log('options:', options)
   const startTimestamp = Number(options.startTimestamp) || Math.floor((Date.now()/1000) - 60 * 60)
   const endTimestamp = Number(options.endTimestamp) || Math.floor(Date.now()/1000)
+  const instanceType = options.instanceType || 'fee-refund'
 
-  // TODO: clean up (SoC)
-  const { OptimismFeeRefund } = require('../instances/feeRefund/FeeRefund')
-  const controller = new Controller(options.network, options.rewardsContract, options.rewardsContractNetwork)
-  const feeRefund = new OptimismFeeRefund(controller)
+  let instance : any
+  let controller : any
+  if (instanceType === 'fee-refund') {
+    const { FeeRefundInstance } = require('../instances/feeRefund/FeeRefund')
+    controller = new Controller(options.network, options.rewardsContract, options.rewardsContractNetwork)
+    instance = new FeeRefundInstance(controller)
+  }
+
+  if (!(controller && instance)) {
+    throw new Error('invalid instance type')
+  }
 
   console.log('source code:', 'https://github.com/hop-protocol/merkle-drop-framework')
   console.log('network:', options.network)
@@ -38,7 +47,7 @@ async function main (options: any = {}) {
   console.log('startTimestamp:', startTimestamp)
   console.log('endTimestamp:', endTimestamp)
 
-  const { tree, total, onchainPreviousTotalAmount, calldata, totalAccounts } = await controller.generateRoot({shouldWrite: false, startTimestamp, endTimestamp, logResult: !!options.logAddressData, writeResultToTempFile: true })
+  const { tree, total, onchainPreviousTotalAmount, calldata, totalAccounts } = await controller.generateRoot({ shouldWrite: false, startTimestamp, endTimestamp, logResult: !!options.logAddressData, writeResultToTempFile: true })
   const rootHash = tree.getHexRoot()
   console.log('----------------')
   console.log('startTimestamp:', startTimestamp)
@@ -57,7 +66,7 @@ async function main (options: any = {}) {
       for (let i = 1; i < 60; i++) {
         const dt = DateTime.now().toUTC().startOf('day').minus({ days: i })
         const timestamp = Math.floor(dt.toSeconds())
-        const tokenPrice = await feeRefund.getTokenPrice(token, timestamp, startTimestamp)
+        const tokenPrice = await instance.getTokenPrice(token, timestamp, startTimestamp)
         console.log('tokenPrice:', token, tokenPrice, dt.toString(), timestamp)
       }
     }

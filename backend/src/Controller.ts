@@ -27,6 +27,8 @@ export class Controller {
   signerOrProvider: Signer | providers.Provider
   checkpointIntervalMs: number
   rpcUrls: Record<string, any>
+  publicRpcUrls: Record<string, any>
+  publicRpcProviders: Record<string, any>
   notifier: Notifier
   rewardsDataOutputGit : SimpleGit
   lastPull : Record<string, any> = {}
@@ -81,6 +83,22 @@ export class Controller {
     }
 
     console.log('rpcUrls', this.rpcUrls)
+
+    this.publicRpcUrls = {
+      mainnet: process.env.PUBLIC_ETHEREUM_RPC_URL,
+      polygon: process.env.PUBLIC_POLYGON_RPC_URL,
+      gnosis: process.env.PUBLIC_GNOSIS_RPC_URL,
+      arbitrum: process.env.PUBLIC_ARBITRUM_RPC_URL,
+      optimism: process.env.PUBLIC_OPTIMISM_RPC_URL
+    }
+
+    this.publicRpcProviders = {
+      mainnet: this.publicRpcUrls.mainnet ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.mainnet) : null,
+      polygon: this.publicRpcUrls.polygon ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.polygon) : null,
+      gnosis: this.publicRpcUrls.gnosis ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.gnosis) : null,
+      arbitrum: this.publicRpcUrls.arbitrum ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.arbitrum) : null,
+      optimism: this.publicRpcUrls.optimism ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.optimism) : null
+    }
 
     const provider = new providers.StaticJsonRpcProvider(this.rpcUrls[rewardsContractNetwork])
 
@@ -483,6 +501,7 @@ export class Controller {
   }
 
   async getHistoryForAccount (account: string) {
+    // implemented by child
     return []
   }
 
@@ -514,12 +533,11 @@ export class Controller {
     }
 
     let withdrawn : BigNumber
-    // TODO: generalize
-    const publicOptimismRpc = process.env.PUBLIC_OPTIMISM_RPC_URL
-    if (publicOptimismRpc) {
+
+    const publicRpcProvider = this.publicRpcProviders[this.rewardsContractNetwork]
+    if (publicRpcProvider) {
       try {
-        const provider = new providers.StaticJsonRpcProvider(publicOptimismRpc)
-        withdrawn = await this.contract.connect(provider).withdrawn(account)
+        withdrawn = await this.contract.connect(publicRpcProvider).withdrawn(account)
       } catch (err: any) {
         withdrawn = await this.contract.withdrawn(account)
       }
@@ -869,7 +887,8 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
     }
 
     if (!isLatestRootSetOnChain) {
-      lastCheckpointMs = lastCheckpointMs - this.checkpointIntervalMs
+      const extraTimeMs = 2 * 7 * 24 * 60 * 60 * 1000 // 2 week
+      lastCheckpointMs = lastCheckpointMs - this.checkpointIntervalMs - (extraTimeMs)
     }
 
     const timeTilNextCheckpointMs = this.checkpointIntervalMs - (Date.now() - lastCheckpointMs)

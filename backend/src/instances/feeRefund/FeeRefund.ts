@@ -7,14 +7,19 @@ import { promiseTimeout } from '../../utils/promiseTimeout'
 
 const feesDbPath = process.env.FEES_DB_PATH || '/tmp/feesdb'
 
-export class OptimismFeeRefund {
+export class FeeRefundInstance {
   controller: any
-  refundChain = 'optimism'
+  refundChain = ''
 
   constructor (controller: any) {
     this.controller = controller
     this.controller.setGetDataFromPackage(this.getDataFromPackage.bind(this))
     this.controller.setGetHistoryForAccount(this.getHistoryForAccount.bind(this))
+    this.refundChain = this.controller.rewardsContractNetwork
+
+    if (!this.refundChain) {
+      throw new Error('expected refundChain')
+    }
   }
 
   async getDataFromPackage (options: any): Promise<any> {
@@ -52,7 +57,7 @@ export class OptimismFeeRefund {
     console.time('calculateFees ' + id)
     let result = await feeRefund.calculateFees(endTimestamp)
 
-    result = offsetFixes(result)
+    result = offsetFixes(this.controller.rewardsContractAddress, result)
 
     console.timeEnd('calculateFees ' + id)
     if (options?.logResult) {
