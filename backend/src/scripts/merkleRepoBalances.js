@@ -5,6 +5,7 @@ const { formatUnits } = require('ethers/lib/utils')
 // cd /tmp
 // git clone git@github.com:hop-protocol/optimism-refund-merkle-rewards.git
 // for cli output run with run with docker flag `-v /tmp/outdir:/outdir` and cli json output will be in /output/out.json
+// docker run --env-file docker.env -v /tmp/outdir:/outdir -v ~/.tmp/feesdb:/tmp/feesdb hopprotocol/merkle-drop-framework start:dist generate -- --network=mainnet --rewards-contract=0x45269F59aA76bB491D0Fc4c26F468D8E1EE26b73 --rewards-contract-network=optimism --start-timestamp=1663898400 --end-timestamp=1680274800
 const repoPath = '/tmp/optimism-refund-merkle-rewards'
 const { root } = require(repoPath + '/latest.json')
 const all = {}
