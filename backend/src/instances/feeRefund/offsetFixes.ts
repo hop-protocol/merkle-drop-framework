@@ -237,6 +237,26 @@ export function offsetFixes (rewardsContractAddress: string, result: Record<stri
     if (result['0x639973e8d33f7e9cc79b82ab92caafaa007bfd01'] === '800000000000000000') {
       result['0x639973e8d33f7e9cc79b82ab92caafaa007bfd01'] = '820000000000000000'
     }
+
+    if (result['0x15c3d6298743e3115df3794f6da20ec4079d1eee'] === '4170132815357698373') {
+      result['0x15c3d6298743e3115df3794f6da20ec4079d1eee'] = '4170132815316018713'
+    }
+
+    if (result['0x190236c3840f258a95fe11e8c45e623dd8174e1e'] === '266465227058373000') {
+      result['0x190236c3840f258a95fe11e8c45e623dd8174e1e'] = '266465227436841312'
+    }
+
+    if (result['0x9963fea7d54bf9d378a23420302c2f35314aac93'] === '507261396082267566') {
+      result['0x9963fea7d54bf9d378a23420302c2f35314aac93'] = '507261396184453603'
+    }
+
+    if (result['0xf1d75e75e375d0656bedad4c0298f4c4668b3e21'] === '321175117705741198') {
+      result['0xf1d75e75e375d0656bedad4c0298f4c4668b3e21'] = '321175117266767396'
+    }
+
+    if (result['0xfc2d9450ee35fc00ccc290e785d9e24bbacf7d86'] === '701867448211852763') {
+      result['0xfc2d9450ee35fc00ccc290e785d9e24bbacf7d86'] = '701867448211757339'
+    }
   }
 
   return result

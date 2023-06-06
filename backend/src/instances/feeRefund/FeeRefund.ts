@@ -6,6 +6,7 @@ import { DateTime } from 'luxon'
 import { promiseTimeout } from '../../utils/promiseTimeout'
 
 const feesDbPath = process.env.FEES_DB_PATH || '/tmp/feesdb'
+const useApiForOnChainData = process.env.USE_API_FOR_ON_CHAIN_DATA === 'true'
 
 export class FeeRefundInstance {
   controller: any
@@ -39,7 +40,7 @@ export class FeeRefundInstance {
     const merkleRewardsContractAddress = this.controller.rewardsContractAddress
     const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
 
-    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount, endTimestamp }
+    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount, endTimestamp, useApiForOnChainData }
     console.log('feeRefund pkg config:', _config)
     const feeRefund = new FeeRefund(_config)
 
@@ -98,7 +99,7 @@ export class FeeRefundInstance {
     const merkleRewardsContractAddress = this.controller.rewardsContractAddress
     const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
 
-    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp: this.controller.startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount }
+    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp: this.controller.startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount, useApiForOnChainData }
     const feeRefund = new FeeRefund(_config)
 
     if (transfer.chain === 'ethereum') {
@@ -168,7 +169,7 @@ export class FeeRefundInstance {
     const refundTokenSymbol = await this.controller.getTokenSymbol()
     const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
     const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
-    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount }
+    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount, useApiForOnChainData }
     const feeRefund = new FeeRefund(_config)
     return feeRefund.getTokenPrice(tokenSymbol, timestamp)
   }
@@ -180,7 +181,7 @@ export class FeeRefundInstance {
     const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
     const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
     const startTimestamp = this.controller.startTimestamp
-    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount }
+    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount, useApiForOnChainData }
     const feeRefund = new FeeRefund(_config)
     const transfers = await feeRefund.getAccountHistory(account)
     return transfers?.sort((a: any, b: any) => b?.timestamp - a?.timestamp).map((x: any) => {
@@ -200,7 +201,7 @@ export class FeeRefundInstance {
     const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
     const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
     const startTimestamp = this.controller.startTimestamp || argv['start-timestamp']
-    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount }
+    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount, useApiForOnChainData }
     const feeRefund = new FeeRefund(_config)
     const migrate = argv.migrate
     if (migrate) {
