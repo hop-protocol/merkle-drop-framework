@@ -27,6 +27,15 @@ docker-push:
 # Build docker image and push to AWS registry
 docker-build-and-push: docker-build docker-tag docker-push
 
+build:
+	npm run build
+
+start:
+	npm run start:dist -- worker --server --start-timestamp=1685923200
+
+tx-info:
+	curl "http://localhost:8000/v1/tx-info?chain=arbitrum&hash=0x1d89f64313f3a801b3044959103637b158de8f6de0a28710a69d25ca8d48b0bb"
+
 request-rewards:
 	curl "http://localhost:8000/v1/rewards?address=0x9997da3de3ec197c853bcc96caecf08a81de9d69"
 	#curl "https://optimism-fee-refund-api.hop.exchange/v1/rewards?address=0x9997da3de3ec197c853bcc96caecf08a81de9d69"

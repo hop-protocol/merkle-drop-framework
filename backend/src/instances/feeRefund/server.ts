@@ -1,8 +1,9 @@
 import { responseCache } from '../../responseCache'
 import { feeRefund } from './instance'
 
-export function setAdditionalRoutes (app: any) {
-  app.get('/v1/refund-amount', responseCache, async (req: any, res: any) => {
+export function setAdditionalRoutes (app: any, middlewares: any) {
+  const { ipRateLimitMiddleware } = middlewares
+  app.get('/v1/refund-amount', ipRateLimitMiddleware, responseCache, async (req: any, res: any) => {
     try {
       const {
         gasCost,

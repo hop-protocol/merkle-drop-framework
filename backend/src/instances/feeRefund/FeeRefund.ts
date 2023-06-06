@@ -15,6 +15,7 @@ export class FeeRefundInstance {
     this.controller = controller
     this.controller.setGetDataFromPackage(this.getDataFromPackage.bind(this))
     this.controller.setGetHistoryForAccount(this.getHistoryForAccount.bind(this))
+    this.controller.setGetTxInfo(this.getTxInfo.bind(this))
     this.refundChain = this.controller.rewardsContractNetwork
 
     if (!this.refundChain) {
@@ -189,5 +190,23 @@ export class FeeRefundInstance {
       }
       return { ...x }
     })
+  }
+
+  async getTxInfo (chain: string, hash: string) {
+    const argv = require('minimist')(process.argv.slice(2))
+    const dbDir = path.resolve(feesDbPath, 'db')
+    const merkleRewardsContractAddress = this.controller.rewardsContractAddress
+    const refundTokenSymbol = await this.controller.getTokenSymbol()
+    const refundPercentage = Number(process.env.REFUND_PERCENTAGE || 0.8)
+    const maxRefundAmount = Number(process.env.MAX_REFUND_AMOUNT || 20)
+    const startTimestamp = this.controller.startTimestamp || argv['start-timestamp']
+    const _config = { network: this.controller.network, dbDir, rpcUrls: this.controller.rpcUrls, merkleRewardsContractAddress, startTimestamp, refundPercentage, refundChain: this.refundChain, refundTokenSymbol, maxRefundAmount }
+    const feeRefund = new FeeRefund(_config)
+    const migrate = argv.migrate
+    if (migrate) {
+      await feeRefund.migrate()
+    }
+    const txInfo = await feeRefund.getTxInfo(chain, hash)
+    return txInfo
   }
 }

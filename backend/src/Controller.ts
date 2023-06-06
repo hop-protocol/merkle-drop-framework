@@ -1018,4 +1018,13 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
       }
     }
   }
+
+  setGetTxInfo (fn: any) {
+    this.getTxInfo = fn
+  }
+
+  async getTxInfo (chain: string, hash: string): Promise<any> {
+    // implemented by child
+    return null
+  }
 }

@@ -18,6 +18,7 @@ program
   .option('--post-forum [boolean]', 'Set to true to post to forum')
   .option('--noCheckpoint [boolean]', 'Set to true to not push to github')
   .option('--server', 'Start server')
+  .option('--migrate', 'Run migration')
   .option('--instance-type <string>', `Instance type. Options are: ${Object.values(InstanceType)}`)
   .action(async (source: any) => {
     try {

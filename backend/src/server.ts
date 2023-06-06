@@ -14,20 +14,19 @@ export async function startServer () {
   app.use(cors())
   app.use(express.json({ limit: '500kb' }))
   app.use(express.urlencoded({ extended: false, limit: '500kb', parameterLimit: 50 }))
-  app.use(ipRateLimitMiddleware)
   app.options('*', cors())
 
-  app.use('/static', express.static('static'))
+  app.use('/static', ipRateLimitMiddleware, express.static('static'))
 
-  app.get('/', (req: any, res: any) => {
+  app.get('/', ipRateLimitMiddleware, (req: any, res: any) => {
     res.status(404).json({ error: 'not found' })
   })
 
-  app.get('/health', (req: any, res: any) => {
+  app.get('/health', ipRateLimitMiddleware, (req: any, res: any) => {
     res.status(200).json({ status: 'ok' })
   })
 
-  app.get('/v1/rewards', responseCache, async (req: any, res: any) => {
+  app.get('/v1/rewards', ipRateLimitMiddleware, responseCache, async (req: any, res: any) => {
     try {
       let { address, history: shouldGetHistory } = req.query
       if (!address) {
@@ -58,7 +57,7 @@ export async function startServer () {
     }
   })
 
-  app.get('/v1/rewards-info', async (req: any, res: any) => {
+  app.get('/v1/rewards-info', ipRateLimitMiddleware, async (req: any, res: any) => {
     try {
       // console.log('/rewards-info getting estimatedTimeMsTilCheckpoint lockedRewards')
       const [estimatedTimeMsTilCheckpoint, lockedRewards, repoRootInfo] = await Promise.all([
@@ -114,7 +113,24 @@ export async function startServer () {
     }
   })
 
-  setAdditionalRoutes(app)
+  app.get('/v1/tx-info', responseCache, async (req: any, res: any) => {
+    try {
+      const { chain, hash } = req.query
+      if (!chain) {
+        throw new Error('chain is requred')
+      }
+      if (!hash) {
+        throw new Error('hash is requred')
+      }
+      const info = await controller.getTxInfo(chain, hash)
+      const data = info
+      res.status(200).json({ status: 'ok', data })
+    } catch (err) {
+      res.status(200).json({ error: err.message })
+    }
+  })
+
+  setAdditionalRoutes(app, { ipRateLimitMiddleware })
 
   const host = '0.0.0.0'
   app.listen(port, host, () => {
