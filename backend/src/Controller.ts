@@ -708,6 +708,7 @@ POLYGON_RPC_URL=https://example.com
 OPTIMISM_RPC_URL=https://example.com
 ARBITRUM_RPC_URL=https://example.com
 GNOSIS_RPC_URL=https://example.com
+USE_API_FOR_ON_CHAIN_DATA=true
 \`\`\`
 
 Web app to publish root:
