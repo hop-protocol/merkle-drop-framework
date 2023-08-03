@@ -61,7 +61,9 @@ async function main (options: any = {}) {
   console.log('----------------')
   console.log('done')
 
+  // for debugging
   if (options.logTokenPrices) {
+    // TODO: pass as args
     const tokens = ['OP', 'ETH', 'USDC', 'USDT', 'DAI', 'SNX']
     for (const token of tokens) {
       for (let i = 1; i < 60; i++) {

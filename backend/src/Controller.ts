@@ -15,6 +15,8 @@ import { DateTime } from 'luxon'
 import { config } from './config'
 import { Notifier } from './Notifier'
 import { chainSlugToId } from './utils/chainSlugToId'
+import { getChainSlugs } from './utils/getChainSlugs'
+import { getDefaultRpcUrl } from './utils/getDefaultRpcUrl'
 
 const cachePromises : any = {}
 const cacheTimestamps : any = {}
@@ -26,9 +28,9 @@ export class Controller {
   signer: Signer
   signerOrProvider: Signer | providers.Provider
   checkpointIntervalMs: number
-  rpcUrls: Record<string, any>
-  publicRpcUrls: Record<string, any>
-  publicRpcProviders: Record<string, any>
+  rpcUrls: Record<string, any> = {}
+  publicRpcUrls: Record<string, any> = {}
+  publicRpcProviders: Record<string, any> = {}
   notifier: Notifier
   rewardsDataOutputGit : SimpleGit
   lastPull : Record<string, any> = {}
@@ -51,24 +53,7 @@ export class Controller {
       throw new Error('NETWORK is required')
     }
 
-    const allRpcUrls = {
-      mainnet: {
-        ethereum: process.env.ETHEREUM_RPC_URL ?? 'https://mainnet.infura.io/v3/84842078b09946638c03157f83405213', // from ethers
-        polygon: process.env.POLYGON_RPC_URL ?? 'https://polygon-rpc.com',
-        gnosis: process.env.GNOSIS_RPC_URL ?? 'https://rpc.gnosischain.com',
-        arbitrum: process.env.ARBITRUM_RPC_URL ?? 'https://arb1.arbitrum.io/rpc',
-        optimism: process.env.OPTIMISM_RPC_URL ?? 'https://mainnet.optimism.io',
-        nova: process.env.NOVA_RPC_URL ?? 'https://nova.arbitrum.io/rpc',
-        base: process.env.BASE_RPC_URL ?? 'https://mainnet.base.org'
-      },
-      goerli: {
-        ethereum: process.env.ETHEREUM_RPC_URL ?? 'https://goerli.infura.io/v3/84842078b09946638c03157f83405213', // from ethers
-        polygon: process.env.POLYGON_RPC_URL ?? 'https://matic-testnet-archive-rpc.bwarelabs.com',
-        gnosis: process.env.GNOSIS_RPC_URL ?? '',
-        arbitrum: process.env.ARBITRUM_RPC_URL ?? 'https://goerli-rollup.arbitrum.io/rpc',
-        optimism: process.env.OPTIMISM_RPC_URL ?? 'https://goerli.optimism.io'
-      }
-    }
+    const chains = getChainSlugs(network)
 
     if (!rewardsContractAddress) {
       throw new Error('REWARDS_CONTRACT_ADDRESS is required')
@@ -78,7 +63,9 @@ export class Controller {
       throw new Error('REWARDS_CONTRACT_NETWORK is required')
     }
 
-    this.rpcUrls = allRpcUrls[network]
+    for (const chain of chains) {
+      this.rpcUrls[chain] = process.env[`${chain?.toUpperCase()}_RPC_URL`] || getDefaultRpcUrl(network, chain)
+    }
 
     if (!this.rpcUrls[rewardsContractNetwork]) {
       throw new Error('invalid rewardsContractNetwork')
@@ -86,24 +73,12 @@ export class Controller {
 
     console.log('rpcUrls', this.rpcUrls)
 
-    this.publicRpcUrls = {
-      ethereum: process.env.PUBLIC_ETHEREUM_RPC_URL,
-      polygon: process.env.PUBLIC_POLYGON_RPC_URL,
-      gnosis: process.env.PUBLIC_GNOSIS_RPC_URL,
-      arbitrum: process.env.PUBLIC_ARBITRUM_RPC_URL,
-      optimism: process.env.PUBLIC_OPTIMISM_RPC_URL,
-      nova: process.env.PUBLIC_NOVA_RPC_URL,
-      base: process.env.PUBLIC_NOVA_RPC_URL
+    for (const chain of chains) {
+      this.publicRpcUrls[chain] = process.env[`PUBLIC_${chain?.toUpperCase()}_RPC_URL`]
     }
 
-    this.publicRpcProviders = {
-      ethereum: this.publicRpcUrls.ethereum ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.ethereum) : null,
-      polygon: this.publicRpcUrls.polygon ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.polygon) : null,
-      gnosis: this.publicRpcUrls.gnosis ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.gnosis) : null,
-      arbitrum: this.publicRpcUrls.arbitrum ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.arbitrum) : null,
-      optimism: this.publicRpcUrls.optimism ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.optimism) : null,
-      nova: this.publicRpcUrls.nova ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.nova) : null,
-      base: this.publicRpcUrls.base ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.base) : null
+    for (const chain of chains) {
+      this.publicRpcProviders[chain] = this.publicRpcUrls[chain] ? new providers.StaticJsonRpcProvider(this.publicRpcUrls[chain]) : null
     }
 
     const provider = new providers.StaticJsonRpcProvider(this.rpcUrls[rewardsContractNetwork])
@@ -686,6 +661,12 @@ export class Controller {
     const postTitle = `AUTOMATED: New Merkle Rewards Root ${endDate.toRFC2822()}`
     const sanitizedGithubUrl = this.getSanitizedGithubUrl(config.rewardsDataOutputGitUrl)
     const chainId = chainSlugToId(this.rewardsContractNetwork)
+
+    const chains = getChainSlugs(this.network)
+    const chainsEnvVarString = chains.map((chain: string) => {
+      return `${chain.toUpperCase()}_RPC_URL=https://example.com`
+    }).join('\n')
+
     const postContent = `
 This is an automated post by the merkle rewards worker bot 🤖
 
@@ -709,14 +690,7 @@ docker run --env-file docker.env -v ~/Downloads/op_merkle_rewards_data:/tmp/fees
 Supply RPC urls in \`docker.env\`:
 
 \`\`\`
-ETHEREUM_RPC_URL=https://example.com
-POLYGON_RPC_URL=https://example.com
-OPTIMISM_RPC_URL=https://example.com
-ARBITRUM_RPC_URL=https://example.com
-GNOSIS_RPC_URL=https://example.com
-NOVA_RPC_URL=https://example.com
-BASE_RPC_URL=https://example.com
-USE_API_FOR_ON_CHAIN_DATA=true
+${chainsEnvVarString}
 \`\`\`
 
 Web app to publish root:
