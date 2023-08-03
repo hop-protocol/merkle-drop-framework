@@ -53,14 +53,16 @@ export class Controller {
 
     const allRpcUrls = {
       mainnet: {
-        mainnet: process.env.ETHEREUM_RPC_URL ?? 'https://mainnet.infura.io/v3/84842078b09946638c03157f83405213', // from ethers
+        ethereum: process.env.ETHEREUM_RPC_URL ?? 'https://mainnet.infura.io/v3/84842078b09946638c03157f83405213', // from ethers
         polygon: process.env.POLYGON_RPC_URL ?? 'https://polygon-rpc.com',
         gnosis: process.env.GNOSIS_RPC_URL ?? 'https://rpc.gnosischain.com',
         arbitrum: process.env.ARBITRUM_RPC_URL ?? 'https://arb1.arbitrum.io/rpc',
-        optimism: process.env.OPTIMISM_RPC_URL ?? 'https://mainnet.optimism.io'
+        optimism: process.env.OPTIMISM_RPC_URL ?? 'https://mainnet.optimism.io',
+        nova: process.env.NOVA_RPC_URL ?? 'https://nova.arbitrum.io/rpc',
+        base: process.env.BASE_RPC_URL ?? 'https://mainnet.base.org'
       },
       goerli: {
-        mainnet: process.env.ETHEREUM_RPC_URL ?? 'https://goerli.infura.io/v3/84842078b09946638c03157f83405213', // from ethers
+        ethereum: process.env.ETHEREUM_RPC_URL ?? 'https://goerli.infura.io/v3/84842078b09946638c03157f83405213', // from ethers
         polygon: process.env.POLYGON_RPC_URL ?? 'https://matic-testnet-archive-rpc.bwarelabs.com',
         gnosis: process.env.GNOSIS_RPC_URL ?? '',
         arbitrum: process.env.ARBITRUM_RPC_URL ?? 'https://goerli-rollup.arbitrum.io/rpc',
@@ -85,19 +87,23 @@ export class Controller {
     console.log('rpcUrls', this.rpcUrls)
 
     this.publicRpcUrls = {
-      mainnet: process.env.PUBLIC_ETHEREUM_RPC_URL,
+      ethereum: process.env.PUBLIC_ETHEREUM_RPC_URL,
       polygon: process.env.PUBLIC_POLYGON_RPC_URL,
       gnosis: process.env.PUBLIC_GNOSIS_RPC_URL,
       arbitrum: process.env.PUBLIC_ARBITRUM_RPC_URL,
-      optimism: process.env.PUBLIC_OPTIMISM_RPC_URL
+      optimism: process.env.PUBLIC_OPTIMISM_RPC_URL,
+      nova: process.env.PUBLIC_NOVA_RPC_URL,
+      base: process.env.PUBLIC_NOVA_RPC_URL
     }
 
     this.publicRpcProviders = {
-      mainnet: this.publicRpcUrls.mainnet ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.mainnet) : null,
+      ethereum: this.publicRpcUrls.ethereum ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.ethereum) : null,
       polygon: this.publicRpcUrls.polygon ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.polygon) : null,
       gnosis: this.publicRpcUrls.gnosis ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.gnosis) : null,
       arbitrum: this.publicRpcUrls.arbitrum ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.arbitrum) : null,
-      optimism: this.publicRpcUrls.optimism ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.optimism) : null
+      optimism: this.publicRpcUrls.optimism ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.optimism) : null,
+      nova: this.publicRpcUrls.nova ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.nova) : null,
+      base: this.publicRpcUrls.base ? new providers.StaticJsonRpcProvider(this.publicRpcUrls.base) : null
     }
 
     const provider = new providers.StaticJsonRpcProvider(this.rpcUrls[rewardsContractNetwork])
@@ -708,6 +714,8 @@ POLYGON_RPC_URL=https://example.com
 OPTIMISM_RPC_URL=https://example.com
 ARBITRUM_RPC_URL=https://example.com
 GNOSIS_RPC_URL=https://example.com
+NOVA_RPC_URL=https://example.com
+BASE_RPC_URL=https://example.com
 USE_API_FOR_ON_CHAIN_DATA=true
 \`\`\`
 
