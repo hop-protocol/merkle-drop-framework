@@ -269,6 +269,20 @@ export function offsetFixes (rewardsContractAddress: string, result: Record<stri
     if (result['0x4cb6f0ef0eeb503f8065af1a6e6d5dd46197d3d9'] === '408133386323719554803') {
       result['0x4cb6f0ef0eeb503f8065af1a6e6d5dd46197d3d9'] = '408123386323719554803'
     }
+
+    // https://github.com/hop-protocol/optimism-refund-merkle-rewards/tree/master/0x53c47ff5e215b4dadd5acbef2751478767569b01ed9d7d152b98e52c57933882
+
+    if (result['0x4cb6f0ef0eeb503f8065af1a6e6d5dd46197d3d9'] === '409023386323719554803') {
+      result['0x4cb6f0ef0eeb503f8065af1a6e6d5dd46197d3d9'] = '409013386323719554803'
+    }
+
+    if (result['0x60c56ef505b8c9d7ac1c7f180a9006a5ea3c3875'] === '7357328448541149375') {
+      result['0x60c56ef505b8c9d7ac1c7f180a9006a5ea3c3875'] = '7367224156208401660'
+    }
+
+    if (result['0x924ac9910c09a0215b06458653b30471a152022f'] === '24449044985433038288') {
+      result['0x924ac9910c09a0215b06458653b30471a152022f'] = '20242378674268381342'
+    }
   }
 
   return result
