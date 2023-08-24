@@ -117,7 +117,7 @@ async function main (options: any) {
       console.log('shouldCheckpoint:', shouldCheckpoint)
       if (shouldCheckpoint) {
         endTimestamp = Math.floor(DateTime.fromSeconds(Math.floor(Date.now() / 1000)).toUTC().minus({ days: 1 }).startOf('hour').toSeconds())
-        const { rootHash, totalFormatted } = await controller.generateRoot({
+        const { rootHash, total, totalFormatted } = await controller.generateRoot({
           shouldWrite: true,
           writePath,
           startTimestamp,
@@ -150,6 +150,7 @@ async function main (options: any) {
             const { postUrl } = await controller.postToForum({
               rootHash,
               totalFormatted,
+              total,
               startTimestamp,
               endTimestamp
             })

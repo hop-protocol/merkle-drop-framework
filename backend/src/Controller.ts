@@ -648,6 +648,7 @@ export class Controller {
     const {
       rootHash,
       totalFormatted,
+      total,
       startTimestamp,
       endTimestamp
     } = data
@@ -674,7 +675,7 @@ A new merkle root has been published to GitHub:
 ${sanitizedGithubUrl}
 
 Merkle root hash: ${rootHash}
-Merkle root total amount: ${totalFormatted}
+Merkle root total amount: ${totalFormatted} (${total.toString()})
 Start timestamp: ${startTimestamp} (${startDate.toISO()})
 End timestamp: ${endTimestamp} (${endDate.toISO()})
 Rewards contract address: ${this.rewardsContractAddress}
@@ -695,6 +696,13 @@ ${chainsEnvVarString}
 
 Web app to publish root:
 https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContractAddress}&merkleBaseUrl=${encodeURIComponent(config.merkleBaseUrl)}
+
+Contract information for multisig signers:
+
+Method: \`setMerkleRoot\`
+Parameters:
+\`_merkleRoot\`: ${rootHash}
+\`totalRewards\`: ${total.toString()}
 `.trim()
 
     console.log('forum post:')
