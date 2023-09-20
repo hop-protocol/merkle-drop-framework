@@ -692,6 +692,7 @@ Supply RPC urls in \`docker.env\`:
 
 \`\`\`
 ${chainsEnvVarString}
+USE_API_FOR_ON_CHAIN_DATA=true
 \`\`\`
 
 Web app to publish root:
@@ -699,10 +700,11 @@ https://mdf.netlify.app/?chainId=${chainId}&rewardsContract=${this.rewardsContra
 
 Contract information for multisig signers:
 
+Contract address: \`${this.rewardsContractAddress}\`
 Method: \`setMerkleRoot\`
 Parameters:
-\`_merkleRoot\`: ${rootHash}
-\`totalRewards\`: ${total.toString()}
+\`_merkleRoot\`: \`${rootHash}\`
+\`totalRewards\`: \`${total.toString()}\`
 `.trim()
 
     console.log('forum post:')
