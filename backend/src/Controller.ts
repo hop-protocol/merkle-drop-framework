@@ -78,10 +78,10 @@ export class Controller {
     }
 
     for (const chain of chains) {
-      this.publicRpcProviders[chain] = this.publicRpcUrls[chain] ? new providers.StaticJsonRpcProvider(this.publicRpcUrls[chain]) : null
+      this.publicRpcProviders[chain] = this.publicRpcUrls[chain] ? new providers.StaticJsonRpcProvider({ allowGzip: true, url: this.publicRpcUrls[chain] }) : null
     }
 
-    const provider = new providers.StaticJsonRpcProvider(this.rpcUrls[rewardsContractNetwork])
+    const provider = new providers.StaticJsonRpcProvider({ allowGzip: true, url: this.rpcUrls[rewardsContractNetwork] })
 
     let signer : Signer
     if (config.privateKey) {
