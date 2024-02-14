@@ -45,3 +45,11 @@ Instructions to run discourse locally with Docker, for testing discourse auto-po
 To generate api key:
 
 Preferences -> Admin -> Manage Keys -> New API Key
+
+## Github Actions
+
+Run github action build locally with [act](https://github.com/nektos/act):
+
+```sh
+(cd ../../ && act --workflows .github/workflows/build.yml)
+```
