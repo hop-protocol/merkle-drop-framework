@@ -1,8 +1,9 @@
 import { program } from 'commander'
-import { Controller } from '../Controller'
-import { formatUnits } from 'ethers/lib/utils'
+import { Controller } from '../Controller.js'
+import { formatUnits } from 'ethers/lib/utils.js'
 import { DateTime } from 'luxon'
-import { InstanceType } from '../config'
+import { InstanceType } from '../config.js'
+import { FeeRefundInstance } from '../instances/feeRefund/FeeRefund.js'
 
 program
   .command('generate')
@@ -28,15 +29,15 @@ async function main (options: any = {}) {
   console.log('options:', options)
   const startTimestamp = Number(options.startTimestamp) || Math.floor((Date.now()/1000) - 60 * 60)
   const endTimestamp = Number(options.endTimestamp) || Math.floor(Date.now()/1000)
-  const instanceType = options.instanceType || InstanceType.FeeRefund
+  // const instanceType = options.instanceType || InstanceType.FeeRefund
 
-  let instance : any
-  let controller : any
-  if (instanceType === InstanceType.FeeRefund) {
-    const { FeeRefundInstance } = require('../instances/feeRefund/FeeRefund')
-    controller = new Controller(options.network, options.rewardsContract, options.rewardsContractNetwork)
-    instance = new FeeRefundInstance(controller)
-  }
+  const controller = new Controller(options.network, options.rewardsContract, options.rewardsContractNetwork)
+  const instance = new FeeRefundInstance(controller)
+  // if (instanceType === InstanceType.FeeRefund) {
+  //   const { FeeRefundInstance } = require('../instances/feeRefund/FeeRefund')
+    // controller = new Controller(options.network, options.rewardsContract, options.rewardsContractNetwork)
+    // instance = new FeeRefundInstance(controller)
+  // }
 
   if (!(controller && instance)) {
     throw new Error('invalid instance type')

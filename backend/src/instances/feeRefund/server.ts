@@ -1,5 +1,5 @@
-import { responseCache } from '../../responseCache'
-import { feeRefund } from './instance'
+import { responseCache } from '../../responseCache.js'
+import { feeRefund } from './instance.js'
 
 export function setAdditionalRoutes (app: any, middlewares: any) {
   const { ipRateLimitMiddleware } = middlewares

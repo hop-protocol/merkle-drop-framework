@@ -1,13 +1,13 @@
 import express from 'express'
-import { port } from './config'
+import { port } from './config.js'
 import cors from 'cors'
-import { ipRateLimitMiddleware } from './rateLimit'
-import { getAddress } from 'ethers/lib/utils'
-import { responseCache } from './responseCache'
+import { ipRateLimitMiddleware } from './rateLimit.js'
+import { getAddress } from 'ethers/lib/utils.js'
+import { responseCache } from './responseCache.js'
 import { DateTime } from 'luxon'
 
 export async function startServer () {
-  const { controller, setAdditionalRoutes } = require('./instance')
+  const { controller, setAdditionalRoutes } = await import('./instance.js')
   const app = express()
 
   app.enable('trust proxy')

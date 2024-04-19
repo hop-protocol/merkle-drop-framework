@@ -1,5 +1,5 @@
 import mcache from 'memory-cache'
-import { disableResponseCache, responseCacheDurationMs } from './config'
+import { disableResponseCache, responseCacheDurationMs } from './config.js'
 
 export function responseCache (req: any, res: any, next: any) {
   const urlKey = req.originalUrl || req.url

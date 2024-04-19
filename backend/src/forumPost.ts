@@ -1,5 +1,5 @@
 import fetch from 'isomorphic-fetch'
-import { forumBaseUrl, forumUsername, forumApiKey, forumCategoryId } from './config'
+import { forumBaseUrl, forumUsername, forumApiKey, forumCategoryId } from './config.js'
 // import FormData from 'form-data'
 
 export async function forumPost (postTitle: string, postContent: string) {

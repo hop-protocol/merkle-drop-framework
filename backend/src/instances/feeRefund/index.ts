@@ -1,3 +1,3 @@
-import { controller } from './instance'
-import { setAdditionalRoutes } from './server'
+import { controller } from './instance.js'
+import { setAdditionalRoutes } from './server.js'
 export { controller, setAdditionalRoutes }

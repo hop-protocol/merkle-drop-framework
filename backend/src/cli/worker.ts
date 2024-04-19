@@ -1,9 +1,9 @@
 import { program } from 'commander'
-import wait from 'wait'
+import { wait } from '../utils/wait.js'
 import { Level } from 'level'
 import { DateTime } from 'luxon'
-import { startServer } from '../server'
-import { config, InstanceType } from '../config'
+import { startServer } from '../server.js'
+import { config, InstanceType } from '../config.js'
 
 const levelDbPath = process.env.LEVEL_DB_PATH
 let lastCheckpointMs = 0
@@ -42,7 +42,7 @@ async function main (options: any) {
     startServer()
   }
 
-  const { controller } = require('../instance')
+  const { controller } = await import('../instance.js')
 
   const pollInterval = (Number(options.pollInterval) || 10)
 

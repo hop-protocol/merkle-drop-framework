@@ -1,9 +1,10 @@
 import { FeeRefund, SeedOptions } from '@hop-protocol/fee-refund'
 import fs from 'fs'
 import path from 'path'
-import { offsetFixes } from './offsetFixes'
+import { offsetFixes } from './offsetFixes.js'
 import { DateTime } from 'luxon'
-import { promiseTimeout } from '../../utils/promiseTimeout'
+import { promiseTimeout } from '../../utils/promiseTimeout.js'
+import minimist from 'minimist'
 
 const feesDbPath = process.env.FEES_DB_PATH || '/tmp/feesdb'
 const useApiForOnChainData = process.env.USE_API_FOR_ON_CHAIN_DATA === 'true'
@@ -194,7 +195,7 @@ export class FeeRefundInstance {
   }
 
   async getTxInfo (chain: string, hash: string) {
-    const argv = require('minimist')(process.argv.slice(2))
+    const argv = minimist(process.argv.slice(2))
     const dbDir = path.resolve(feesDbPath, 'db')
     const merkleRewardsContractAddress = this.controller.rewardsContractAddress
     const refundTokenSymbol = await this.controller.getTokenSymbol()

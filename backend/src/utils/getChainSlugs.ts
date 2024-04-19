@@ -1,4 +1,6 @@
-import { mainnet as mainnetAddresses, goerli as goerliAddresses } from '@hop-protocol/core/addresses'
+import { addresses } from '@hop-protocol/fee-refund'
+
+const { mainnet: mainnetAddresses, goerli: goerliAddresses } = addresses
 
 const networks = {
   mainnet: mainnetAddresses,

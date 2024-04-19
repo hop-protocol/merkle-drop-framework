@@ -1,6 +1,6 @@
 import { program } from 'commander'
 
-import './worker'
-import './generate'
+import './worker.js'
+import './generate.js'
 
 program.parse()

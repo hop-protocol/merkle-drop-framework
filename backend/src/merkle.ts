@@ -1,6 +1,8 @@
 import { utils, BigNumber } from 'ethers'
 import { MerkleTree } from 'merkletreejs'
 import keccak256 from 'keccak256'
+import fs from 'fs'
+import path from 'path'
 
 function hashLeaf ([address, entry]) {
   const salt = keccak256('MERKLE_REWARDS_LEAF_HASH')
@@ -111,8 +113,6 @@ class ShardedMerkleTree {
     const tree = new MerkleTree(Object.values(roots), keccak256, { sort: true })
 
     if (directory) {
-      const fs = require('fs')
-      const path = require('path')
       fs.mkdirSync(directory, { recursive: true })
       fs.writeFileSync(path.join(directory, 'root.json'), JSON.stringify({
         root: tree.getHexRoot(),
@@ -164,8 +164,6 @@ class ShardedMerkleTree {
   }
 
   static fromFiles (directory: string) {
-    const fs = require('fs')
-    const path = require('path')
     const { root, shardNybbles, total } = JSON.parse(fs.readFileSync(path.join(directory, 'root.json'), { encoding: 'utf-8' }))
     return new ShardedMerkleTree((shard: any) => {
       const filepath = path.join(directory, `${shard}.json`)

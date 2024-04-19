@@ -1,4 +1,4 @@
-require('./cli')
+import './cli/index.js'
 
 process.on('uncaughtException', (err: any) => {
   console.error('uncaughtException', err)

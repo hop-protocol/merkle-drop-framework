@@ -4,19 +4,21 @@ import fs from 'fs'
 import fse from 'fs-extra'
 import path from 'path'
 import globby from 'globby'
-import { ShardedMerkleTree } from './merkle'
-import simpleGit, { SimpleGit } from 'simple-git'
+import { ShardedMerkleTree } from './merkle.js'
+import simpleGit_, { SimpleGit } from 'simple-git'
 import { Signer, constants, Wallet, BigNumber, Contract, providers } from 'ethers'
-import { formatUnits, parseUnits } from 'ethers/lib/utils'
-import merkleRewardsAbi from './abi/MerkleRewards.json'
-import tokenAbi from './abi/ERC20.json'
-import { forumPost } from './forumPost'
+import { formatUnits, parseUnits } from 'ethers/lib/utils.js'
+import merkleRewardsAbi from './abi/MerkleRewards.json' assert { type: "json" }
+import tokenAbi from './abi/ERC20.json' assert { type: "json" }
+import { forumPost } from './forumPost.js'
 import { DateTime } from 'luxon'
-import { config } from './config'
-import { Notifier } from './Notifier'
-import { chainSlugToId } from './utils/chainSlugToId'
-import { getChainSlugs } from './utils/getChainSlugs'
-import { getDefaultRpcUrl } from './utils/getDefaultRpcUrl'
+import { config } from './config.js'
+import { Notifier } from './Notifier.js'
+import { chainSlugToId } from './utils/chainSlugToId.js'
+import { getChainSlugs } from './utils/getChainSlugs.js'
+import { getDefaultRpcUrl } from './utils/getDefaultRpcUrl.js'
+
+const simpleGit = (simpleGit_ as any).default || simpleGit_
 
 const cachePromises : any = {}
 const cacheTimestamps : any = {}
@@ -68,7 +70,7 @@ export class Controller {
     }
 
     if (!this.rpcUrls[rewardsContractNetwork]) {
-      throw new Error('invalid rewardsContractNetwork')
+      throw new Error(`invalid rewardsContractNetwork "${rewardsContractNetwork}", no rpcUrl found`)
     }
 
     console.log('rpcUrls', this.rpcUrls)
@@ -351,7 +353,7 @@ export class Controller {
 
   async setMerkleRoot (rootHash: string) {
     const rootJsonPath = path.resolve(config.outputRepoPath, rootHash, 'root.json')
-    const { root, total } = require(rootJsonPath)
+    const { root, total } = JSON.parse(fs.readFileSync(rootJsonPath, { encoding: 'utf-8' }))
     const owner = await this.signer.getAddress()
     console.log(root, total)
     const totalBn = BigNumber.from(total)
@@ -595,7 +597,7 @@ export class Controller {
           continue
         }
         const file = `${info.dir}/${filenameTimestamp}${info.ext}`
-        const previousData = require(file)
+        const previousData = JSON.parse(fs.readFileSync(file, { encoding: 'utf-8' }))
         for (const address in previousData) {
           let amount = BigNumber.from(previousData[address])
           if (startTimestamp && filenameTimestamp >= startTimestamp) {
@@ -610,7 +612,7 @@ export class Controller {
 
       data = updatedData
     } else {
-      data = require(paths[0])
+      data = JSON.parse(fs.readFileSync(paths[0], { encoding: 'utf-8' }))
       for (const address in data) {
         const amount = BigNumber.from(data[address])
         timestampRangeTotal = timestampRangeTotal.add(amount)

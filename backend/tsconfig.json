@@ -1,14 +1,15 @@
 {
   "compilerOptions": {
+    "lib": ["dom", "es2017", "esnext"],
+    "types": ["node", "jest"],
     "resolveJsonModule": true,
-    "module": "commonjs",
+    "module": "nodenext",
     "esModuleInterop": true,
     "target": "es6",
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "sourceMap": true,
     "outDir": "dist"
   },
-  "lib": ["es2015"],
   "include":[
     "src/**/*",
     "src/**/*.json"
