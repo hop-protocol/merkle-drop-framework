@@ -1,12 +1,6 @@
-import { networks } from '@hop-protocol/fee-refund'
-
-const { mainnet: mainnetAddresses, goerli: goerliAddresses } = networks
-
-const nets = {
-  mainnet: mainnetAddresses,
-  goerli: goerliAddresses
-}
+import { getNetwork } from '@hop-protocol/fee-refund'
 
 export function getDefaultRpcUrl (network: string, chain: string) {
-  return nets[network]?.[chain]?.publicRpcUrl
+  const net = getNetwork(network as any)
+  return net.chains[chain]?.publicRpcUrl
 }
