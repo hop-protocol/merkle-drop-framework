@@ -221,7 +221,9 @@ export class Controller {
     try {
       await git.checkout(['-b', 'master'])
     } catch (err) {
-      console.log('checkout error', err.message)
+      if (!err.message.includes('already exists')) {
+        console.log('checkout branch error', err.message)
+      }
     }
 
     try {
