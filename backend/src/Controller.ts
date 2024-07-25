@@ -661,7 +661,8 @@ export class Controller {
 
     const startDate = DateTime.fromSeconds(startTimestamp)
     const endDate = DateTime.fromSeconds(endTimestamp)
-    const postTitle = `AUTOMATED: New Merkle Rewards Root ${endDate.toRFC2822()}`
+    const tokenSymbol = await this.getTokenSymbol()
+    const postTitle = `AUTOMATED: New ${tokenSymbol} Merkle Rewards Root ${endDate.toRFC2822()}`
     const sanitizedGithubUrl = this.getSanitizedGithubUrl(config.rewardsDataOutputGitUrl)
     const chainId = chainSlugToId(this.rewardsContractNetwork)
 
