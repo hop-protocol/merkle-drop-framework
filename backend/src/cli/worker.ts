@@ -13,6 +13,7 @@ program
   .description('Start worker')
   .option('--start-timestamp <value>', 'Start timestamp in seconds')
   .option('--end-timestamp <value>', 'End timestamp in seconds')
+  .option('--do-last-checkpoint <value>', 'Perform final checkpoint, value is end timestamp in seconds') // TODO: rename to end-timestamp, this was added as a quick fix
   .option('--poll-interval <value>', 'Poll interval in seconds')
   .option('--checkpoint-interval <value>', 'Checkpoint interval in seconds')
   .option('--post-forum [boolean]', 'Set to true to post to forum')
@@ -54,6 +55,26 @@ async function main (options: any) {
 
   while (true) {
     try {
+      if (options.doLastCheckpoint) {
+        console.log('checking if last checkpoint is needed')
+        const lastRepoCheckpointMs = await controller.getLastRepoCheckpointMs()
+        if (!lastRepoCheckpointMs) {
+          console.log('no last checkpoint found, exiting')
+          process.exit(0)
+        }
+
+        const lastRepoCheckpointDate = DateTime.fromMillis(lastRepoCheckpointMs)
+        const lastDate = DateTime.fromSeconds(Number(options.doLastCheckpoint))
+
+        const diffInDays = lastDate.diff(lastRepoCheckpointDate, 'days').days
+        console.log(diffInDays, 'days difference')
+
+        if (Math.abs(diffInDays) <= 2) {
+          console.log('last checkpoint is within 2 days, exiting worker')
+          break
+        }
+      }
+
       console.log('poll running')
       // console.log('pulling rewards data')
       // const changed = await controller.pullRewardsDataFromRepo()
@@ -109,14 +130,19 @@ async function main (options: any) {
       console.log('root:', rootHash)
       console.log('total:', `${totalFormatted}`)
 
-      const isExpired = (lastCheckpointMs || startTimestamp) + checkpointIntervalMs < Date.now()
+      let isExpired = (lastCheckpointMs || startTimestamp) + checkpointIntervalMs < Date.now()
+      if (options.doLastCheckpoint) {
+        isExpired = Number(options.doLastCheckpoint) < Math.floor(Date.now() / 1000) // note: uncomment when running last checkpoint
+        // TODO: handle endTimestamp and lastCheckpointMs
+      }
       let shouldCheckpoint = isExpired && rootHash !== '0x'
       if (options.noCheckpoint) {
         shouldCheckpoint = false
       }
       console.log('shouldCheckpoint:', shouldCheckpoint)
       if (shouldCheckpoint) {
-        endTimestamp = Math.floor(DateTime.fromSeconds(Math.floor(Date.now() / 1000)).toUTC().minus({ days: 1 }).startOf('hour').toSeconds())
+        const now = Math.floor(Date.now() / 1000)
+        endTimestamp = Math.floor(DateTime.fromSeconds(now).toUTC().minus({ days: 1 }).startOf('hour').toSeconds())
         const { rootHash, total, totalFormatted } = await controller.generateRoot({
           shouldWrite: true,
           writePath,
@@ -173,6 +199,15 @@ async function main (options: any) {
       await controller.pruneMerkleDir()
 
       console.log('poll done')
+
+      if (options.doLastCheckpoint) {
+        const now = Math.floor(Date.now() / 1000)
+        if (Number(options.doLastCheckpoint) < now) {
+          console.log('endTimestamp reached, exiting worker loop.')
+          break
+        }
+      }
+
       console.log(`next poll in ${pollInterval} seconds`)
     } catch (err) {
       console.error('poll error', err)
