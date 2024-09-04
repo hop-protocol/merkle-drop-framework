@@ -40,7 +40,7 @@ async function main (options: any) {
 
   if (options.server) {
     console.log('starting server')
-    startServer()
+    startServer(options)
   }
 
   const { controller } = await import('../instance.js')
@@ -64,10 +64,10 @@ async function main (options: any) {
         }
 
         const lastRepoCheckpointDate = DateTime.fromMillis(lastRepoCheckpointMs)
-        const lastDate = DateTime.fromSeconds(Number(options.doLastCheckpoint))
+        const endDateForLastCheckpoint = DateTime.fromSeconds(Number(options.doLastCheckpoint))
 
-        const diffInDays = lastDate.diff(lastRepoCheckpointDate, 'days').days
-        console.log(diffInDays, 'days difference')
+        const diffInDays = endDateForLastCheckpoint.diff(lastRepoCheckpointDate, 'days').days
+        console.log(diffInDays, 'days difference between lastRepoCheckpointDate and endDateForLastCheckpoint')
 
         if (Math.abs(diffInDays) <= 2) {
           console.log('last checkpoint is within 2 days, exiting worker')

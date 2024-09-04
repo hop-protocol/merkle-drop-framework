@@ -8,8 +8,8 @@ import { ShardedMerkleTree } from './merkle.js'
 import simpleGit_, { SimpleGit } from 'simple-git'
 import { Signer, constants, Wallet, BigNumber, Contract, providers } from 'ethers'
 import { formatUnits, parseUnits } from 'ethers/lib/utils.js'
-import merkleRewardsAbi from './abi/MerkleRewards.json' assert { type: "json" }
-import tokenAbi from './abi/ERC20.json' assert { type: "json" }
+import merkleRewardsAbi from './abi/MerkleRewards.json' assert { type: 'json' }
+import tokenAbi from './abi/ERC20.json' assert { type: 'json' }
 import { forumPost } from './forumPost.js'
 import { DateTime } from 'luxon'
 import { config } from './config.js'
@@ -857,7 +857,7 @@ Parameters:
     const oneDay = oneHour * 24
     const defaultTimeMs = oneDay
     if (!this.checkpointIntervalMs) {
-      console.log('this.checkpointIntervalMs not set')
+      console.log('"this.checkpointIntervalMs" not set, returning defaultTimeMs (OneDay) for getRemainingTimeTilCheckpoint')
       return defaultTimeMs
     }
 

@@ -6,7 +6,7 @@ import { getAddress } from 'ethers/lib/utils.js'
 import { responseCache } from './responseCache.js'
 import { DateTime } from 'luxon'
 
-export async function startServer () {
+export async function startServer (options: any = {}) {
   const { controller, setAdditionalRoutes } = await import('./instance.js')
   const app = express()
 
@@ -130,7 +130,7 @@ export async function startServer () {
     }
   })
 
-  setAdditionalRoutes(app, { ipRateLimitMiddleware })
+  setAdditionalRoutes(app, { ipRateLimitMiddleware }, options)
 
   const host = '0.0.0.0'
   app.listen(port, host, () => {

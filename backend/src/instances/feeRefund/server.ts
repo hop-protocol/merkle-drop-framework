@@ -1,9 +1,24 @@
 import { responseCache } from '../../responseCache.js'
 import { feeRefund } from './instance.js'
 
-export function setAdditionalRoutes (app: any, middlewares: any) {
+export function setAdditionalRoutes (app: any, middlewares: any, options: any = {}) {
   const { ipRateLimitMiddleware } = middlewares
   app.get('/v1/refund-amount', ipRateLimitMiddleware, responseCache, async (req: any, res: any) => {
+    if (options.startTimestamp) {
+      const now = Math.floor(Date.now() / 1000)
+      if (now < Number(options.startTimestamp)) {
+        res.status(400).json({ error: 'Rewards cycle has not started.' })
+        return
+      }
+    }
+    if (options.endTimestamp) {
+      const now = Math.floor(Date.now() / 1000)
+      if (now > Number(options.endTimestamp)) {
+        res.status(400).json({ error: 'Rewards cycle has ended.' })
+        return
+      }
+    }
+
     try {
       const {
         gasCost,
